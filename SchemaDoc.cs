@@ -6571,6 +6571,7 @@ namespace IfcDoc.Schema.DOC
 	/// </summary>
 	public class DocPrimitive : DocDefinition // 5.8
 	{
+		[IgnoreDataMember] public override string id { get { return Name; } }
 	}
 
 	/// <summary>
@@ -6798,6 +6799,8 @@ namespace IfcDoc.Schema.DOC
 		{
 			DefaultMember = null;
 		}
+
+		[IgnoreDataMember] public override string id { get { return Name; } }
 	}
 	public class DocSubtype : DocObject
 	{
@@ -7234,6 +7237,8 @@ namespace IfcDoc.Schema.DOC
 
 			return docEnt;
 		}
+
+		[IgnoreDataMember] public override string id { get { return Name; } }
 	}
 
 	public enum DocStateEnum // matches IfcStateEnum
@@ -7566,6 +7571,8 @@ namespace IfcDoc.Schema.DOC
 
 			return docEnt;
 		}
+
+		[IgnoreDataMember] public override string id { get { return Name; } }
 	}
 
 	/// <summary>
