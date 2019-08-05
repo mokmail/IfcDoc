@@ -19,6 +19,77 @@ namespace IfcDoc
 		public static void SaveProject(DocProject project, string filePath)
 		{
 			project.SortProject();
+			DocConstant notdefined = project.Constants.Where(x => string.Compare(x.Name, "NOTDEFINED", true) == 0).Where(x => string.Compare(x.Documentation, "Undefined type.", true) == 0).FirstOrDefault();
+			DocConstant userdefined = project.Constants.Where(x => string.Compare(x.Name, "USERDEFINED", true) == 0).Where(x => string.Compare(x.Documentation, "User_defined type.", true) == 0).FirstOrDefault();
+
+			foreach(DocSection section in project.Sections)
+			{
+				foreach(DocSchema schema in section.Schemas)
+				{
+					foreach(DocEnumeration enumeration in schema.Types.OfType<DocEnumeration>())
+					{
+						for(int counter = 0; counter < enumeration.Constants.Count; counter++)
+						{
+							DocConstant constant = enumeration.Constants[counter];
+							if(notdefined != null && string.Compare(notdefined.UniqueId, constant.UniqueId) != 0 && string.Compare(notdefined.Name, constant.Name) == 0 && string.Compare(notdefined.Documentation, constant.Documentation) == 0)
+							{
+								project.Constants.Remove(constant);
+								enumeration.Constants[counter] = notdefined;
+							}
+							else if(userdefined != null && string.Compare(userdefined.UniqueId, constant.UniqueId) != 0 && string.Compare(userdefined.Name, constant.Name) == 0 && string.Compare(userdefined.Documentation, constant.Documentation) == 0)
+							{
+								project.Constants.Remove(constant);
+								enumeration.Constants[counter] = notdefined;
+							}
+						}
+					}
+				}
+			}
+
+			DocPropertyConstant other = project.PropertyConstants.Where(x => string.Compare(x.Name, "OTHER", true) == 0).FirstOrDefault();
+			DocPropertyConstant none = project.PropertyConstants.Where(x => string.Compare(x.Name, "NONE", true) == 0).FirstOrDefault();
+			DocPropertyConstant notknown = project.PropertyConstants.Where(x => string.Compare(x.Name, "NOTKNOWN", true) == 0).FirstOrDefault();
+			DocPropertyConstant unset = project.PropertyConstants.Where(x => string.Compare(x.Name, "UNSET", true) == 0).FirstOrDefault();
+			DocPropertyConstant notdefinedProperty = project.PropertyConstants.Where(x => string.Compare(x.Name, "NOTDEFINED", true) == 0).FirstOrDefault();
+			DocPropertyConstant userdefinedProperty = project.PropertyConstants.Where(x => string.Compare(x.Name, "USERDEFINED", true) == 0).FirstOrDefault();
+			
+			foreach(DocPropertyEnumeration enumeration in project.PropertyEnumerations)
+			{
+				for(int counter = 0; counter < enumeration.Constants.Count; counter++)
+				{
+					DocPropertyConstant constant = enumeration.Constants[counter];
+					if (other != null && string.Compare(other.UniqueId, constant.UniqueId) != 0 && string.Compare(other.Name, constant.Name) == 0)
+					{
+						project.PropertyConstants.Remove(constant);
+						enumeration.Constants[counter] = other;
+					}
+					else if (none != null && string.Compare(none.UniqueId, constant.UniqueId) != 0 && string.Compare(none.Name, constant.Name) == 0)
+					{
+						project.PropertyConstants.Remove(constant);
+						enumeration.Constants[counter] = none;
+					}
+					else if (notknown != null && string.Compare(notknown.UniqueId, constant.UniqueId) != 0 && string.Compare(notknown.Name, constant.Name) == 0)
+					{
+						project.PropertyConstants.Remove(constant);
+						enumeration.Constants[counter] = notknown;
+					}
+					else if (unset != null && string.Compare(unset.UniqueId, constant.UniqueId) != 0 && string.Compare(unset.Name, constant.Name) == 0)
+					{
+						project.PropertyConstants.Remove(constant);
+						enumeration.Constants[counter] = unset;
+					}
+					else if (notdefined != null && string.Compare(notdefinedProperty.UniqueId, constant.UniqueId) != 0 && string.Compare(notdefinedProperty.Name, constant.Name) == 0)
+					{
+						project.PropertyConstants.Remove(constant);
+						enumeration.Constants[counter] = notdefinedProperty;
+					}
+					else if (userdefinedProperty != null && string.Compare(userdefinedProperty.UniqueId, constant.UniqueId) != 0 && string.Compare(userdefinedProperty.Name, constant.Name) == 0)
+					{
+						project.PropertyConstants.Remove(constant);
+						enumeration.Constants[counter] = userdefinedProperty;
+					}
+				}
+			}
 			string ext = System.IO.Path.GetExtension(filePath).ToLower();
 			switch (ext)
 			{
@@ -190,7 +261,13 @@ namespace IfcDoc
 					{
 						DocChangeSet docChangeSet = docObject as DocChangeSet;
 						if (docChangeSet != null)
-							docChangeSet.ChangesEntities.RemoveAll(x => !isUnchanged(x));
+						{
+							docChangeSet.ChangesEntities.RemoveAll(isUnchanged);
+							docChangeSet.ChangesProperties.RemoveAll(isUnchanged);
+							docChangeSet.ChangesQuantities.RemoveAll(isUnchanged);
+							docChangeSet.ChangesViews.RemoveAll(isUnchanged);
+
+						}
 						else
 						{
 							if (schemaVersion < 12)
@@ -257,8 +334,8 @@ namespace IfcDoc
 		
 		private static bool isUnchanged(DocChangeAction docChangeAction)
 		{
-			docChangeAction.Changes.RemoveAll(x => isUnchanged(x));
-			if (docChangeAction.Changes.Count == 0 && docChangeAction.Action == DocChangeActionEnum.NOCHANGE && !docChangeAction.ImpactXML && !docChangeAction.ImpactSPF)
+			docChangeAction.Changes.RemoveAll(isUnchanged);
+			if (docChangeAction.Changes.Count ==  0 && docChangeAction.Action == DocChangeActionEnum.NOCHANGE && !docChangeAction.ImpactXML && !docChangeAction.ImpactSPF)
 				return true;
 			return false;
 		}
