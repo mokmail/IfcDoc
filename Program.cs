@@ -1235,7 +1235,7 @@ namespace IfcDoc
 				//	propertyEnumerations.Add(ifcProp);
 					foreach (DocPropertyConstant docConst in docEnumeration.Constants)
 					{
-						IfcLabel label = new IfcLabel(docConst.Name);
+						IfcLabel label = new IfcLabel(docConst.Name.ToUpper());
 						ifcProp.EnumerationValues.Add(label);
 
 						foreach (DocLocalization docLoc in docConst.Localization)

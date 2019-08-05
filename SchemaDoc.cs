@@ -2455,7 +2455,92 @@ namespace IfcDoc.Schema.DOC
 			return null;
 		}
 
+		public void BuildMaps(Dictionary<string, DocObject> mapEntity, Dictionary<string, string> mapSchema)
+		{
+			foreach (DocPropertyEnumeration def in PropertyEnumerations)
+			{
+				if (!mapEntity.ContainsKey(def.Name))
+				{
+					mapEntity.Add(def.Name, def);
+				}
+			}
+			foreach (DocSection docSection in Sections)
+			{
+				foreach (DocSchema docSchema in docSection.Schemas)
+				{
+					foreach (DocEntity def in docSchema.Entities)
+					{
+						if (def.Name != null)
+						{
+							if (!mapSchema.ContainsKey(def.Name))
+							{
+								mapSchema.Add(def.Name, docSchema.Name);
+							}
 
+							if (!mapEntity.ContainsKey(def.Name))
+							{
+								mapEntity.Add(def.Name, def);
+							}
+						}
+
+					}
+					foreach (DocType def in docSchema.Types)
+					{
+						// bug in vex file: IfcNullStyle included twice (?)
+						if (!mapSchema.ContainsKey(def.Name))
+						{
+							mapSchema.Add(def.Name, docSchema.Name);
+						}
+
+						if (!mapEntity.ContainsKey(def.Name))
+						{
+							mapEntity.Add(def.Name, def);
+						}
+					}
+					foreach (DocFunction def in docSchema.Functions)
+					{
+						// e.g. IfcDotProduct defined in multiple schemas!!!
+						if (!mapSchema.ContainsKey(def.Name))
+						{
+							mapSchema.Add(def.Name, docSchema.Name);
+						}
+						if (!mapEntity.ContainsKey(def.Name))
+						{
+							mapEntity.Add(def.Name, def);
+						}
+					}
+					foreach (DocGlobalRule def in docSchema.GlobalRules)
+					{
+						mapSchema.Add(def.Name, docSchema.Name);
+						if (!mapEntity.ContainsKey(def.Name))
+						{
+							mapEntity.Add(def.Name, def);
+						}
+					}
+					foreach (DocPropertySet def in docSchema.PropertySets)
+					{
+						if (def.Name != null)
+						{
+							mapSchema.Add(def.Name, docSchema.Name);
+						}
+						if (!mapEntity.ContainsKey(def.Name))
+						{
+							mapEntity.Add(def.Name, def);
+						}
+					}
+
+					foreach (DocQuantitySet def in docSchema.QuantitySets)
+					{
+						mapSchema.Add(def.Name, docSchema.Name);
+						if (!mapEntity.ContainsKey(def.Name))
+						{
+							mapEntity.Add(def.Name, def);
+						}
+					}
+				}
+			}
+
+		}
 	}
 
 	/// <summary>
