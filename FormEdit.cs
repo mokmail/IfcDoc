@@ -3007,6 +3007,9 @@ namespace IfcDoc
 					{
 						//toolStripMenuItemInsertEnumerationConstant.Enabled = true;
 
+						this.toolStripMenuItemContextInsertConstant.Visible = true;
+						this.toolStripMenuItemContextInsert.Visible = true;
+
 						this.toolStripMenuItemContextIncludeConstant.Visible = true;
 						this.toolStripMenuItemContextInclude.Visible = true;
 					}
