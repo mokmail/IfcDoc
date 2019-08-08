@@ -4750,7 +4750,10 @@ namespace IfcDoc
 			Dictionary<string, DocPropertyEnumeration> mapPropEnum = new Dictionary<string, DocPropertyEnumeration>();
 			foreach (DocPropertyEnumeration docEnum in docProject.PropertyEnumerations)
 			{
-				mapPropEnum.Add(docEnum.Name, docEnum);
+				if (!mapPropEnum.ContainsKey(docEnum.Name))
+				{
+					mapPropEnum.Add(docEnum.Name, docEnum);
+				}
 			}
 
 			Dictionary<DocObject, string> mapNumber = new Dictionary<DocObject, string>(); // map items to section (e.g. "1.1.1.1")
