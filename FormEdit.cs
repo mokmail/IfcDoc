@@ -3163,6 +3163,9 @@ namespace IfcDoc
 					this.toolStripMenuItemContextIncludeProperty.Visible = true;
 					this.toolStripMenuItemContextInclude.Visible = true;
 
+					this.toolStripMenuItemContextInsert.Visible = true;
+					this.toolStripMenuItemContextInsertProperty.Visible = true;
+
 					this.ToolStripMenuItemEditCut.Enabled = true;
 					this.toolStripMenuItemEditPaste.Enabled = (this.m_clipboard is DocProperty);
 				}
