@@ -135,10 +135,11 @@ namespace BuildingSmart.Serialization.Xml
 					continue;
 				Type propertyType = propertyInfo.PropertyType;
 				XmlArrayAttribute xmlArrayAttribute = propertyInfo.GetCustomAttribute<XmlArrayAttribute>();
-				XmlAttributeAttribute xmlAttributeAttribute = propertyInfo.GetCustomAttribute<XmlAttributeAttribute>();
-				if (xmlArrayAttribute == null && xmlAttributeAttribute == null)
+				XmlArrayItemAttribute xmlArrayItemAttribute = propertyInfo.GetCustomAttribute<XmlArrayItemAttribute>();
+
+				if (xmlArrayAttribute != null && xmlArrayItemAttribute != null)
 				{
-					if (propertyType.IsGenericType && typeof(IEnumerable).IsAssignableFrom(propertyType.GetGenericTypeDefinition()))
+					if (string.IsNullOrEmpty(xmlArrayItemAttribute.ElementName) && xmlArrayItemAttribute.NestingLevel > 0 && propertyType.IsGenericType && typeof(IEnumerable).IsAssignableFrom(propertyType.GetGenericTypeDefinition()))
 					{
 						Type genericType = propertyType.GetGenericArguments()[0];
 						PropertyInfo uniqueIdProperty = genericType.GetProperty("id", typeof(string));
@@ -169,34 +170,31 @@ namespace BuildingSmart.Serialization.Xml
 									string nestedPath = Path.Combine(folderPath, removeInvalidFile(propertyInfo.Name));
 									Directory.CreateDirectory(nestedPath);
 									nestedProperties.Add(propertyInfo.Name);
-									//if(count > 500)
-									//{
-									//	string prefix = m_NominatedTypeFilePrefix.Count > 0 ? hasFilePrefix(genericType) : "";
-									//	IEnumerable<IGrouping<char, object>> groups = null;
-									//	if (string.IsNullOrEmpty(prefix))
-									//		groups = enumerable.Cast<object>().GroupBy(x => char.ToLower(uniqueIdProperty.GetValue(x).ToString()[0]));
-									//	else
-									//	{
-									//		int prefixLength = prefix.Length;
-									//		groups = enumerable.Cast<object>().GroupBy(x => char.ToLower(initialChar(uniqueIdProperty.GetValue(x).ToString(), prefix, prefixLength)));
-									//	}
-									//	if(groups.Count() > 2)
-									//	{
-									//		foreach(IGrouping<char,object> group in groups)
-									//		{
-									//			string alphaPath = Path.Combine(nestedPath, group.Key.ToString());
-									//			Directory.CreateDirectory(alphaPath);
-									//			foreach (object nested in group)
-									//			{
-									//				mObjectStore.MarkEncountered(nested, ref nextID);
-									//				string nestedObjectPath = Path.Combine(alphaPath, removeInvalidFile(uniqueIdProperty.GetValue(nested).ToString()));
-									//				Directory.CreateDirectory(nestedObjectPath);
-									//				queue.Enqueue(new QueueData(Path.Combine(nestedObjectPath, removeInvalidFile(nested.GetType().Name) + ".xml"), nested));
-									//			}
-									//		}
-									//		continue;
-									//	}
-									//}
+									if(xmlArrayItemAttribute.NestingLevel > 1)
+									{
+										string prefix = m_NominatedTypeFilePrefix.Count > 0 ? hasFilePrefix(genericType) : "";
+										IEnumerable<IGrouping<char, object>> groups = null;
+										if (string.IsNullOrEmpty(prefix))
+											groups = enumerable.Cast<object>().GroupBy(x => char.ToLower(uniqueIdProperty.GetValue(x).ToString()[0]));
+										else
+										{
+											int prefixLength = prefix.Length;
+											groups = enumerable.Cast<object>().GroupBy(x => char.ToLower(initialChar(uniqueIdProperty.GetValue(x).ToString(), prefix, prefixLength)));
+										}
+										foreach(IGrouping<char,object> group in groups)
+										{
+											string alphaPath = Path.Combine(nestedPath, group.Key.ToString());
+											Directory.CreateDirectory(alphaPath);
+											foreach (object nested in group)
+											{
+												_ObjectStore.MarkEncountered(nested, ref nextID);
+												string nestedObjectPath = Path.Combine(alphaPath, removeInvalidFile(uniqueIdProperty.GetValue(nested).ToString()));
+												Directory.CreateDirectory(nestedObjectPath);
+												queue.Enqueue(new QueueData(Path.Combine(nestedObjectPath, removeInvalidFile(nested.GetType().Name) + ".xml"), nested));
+											}
+										}
+										continue;
+									}
 									foreach (object nested in enumerable)
 									{
 										if (nested == null)

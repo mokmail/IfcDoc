@@ -118,7 +118,7 @@ namespace BuildingSmart.Serialization.Xml
 				if(string.IsNullOrEmpty(typename))
 				{
 					reader.Read();
-					while (reader.NodeType == XmlNodeType.XmlDeclaration || reader.NodeType == XmlNodeType.Whitespace)
+					while (reader.NodeType == XmlNodeType.XmlDeclaration || reader.NodeType == XmlNodeType.Whitespace || reader.NodeType == XmlNodeType.Comment)
 						reader.Read();
 					typename = reader.LocalName;
 				}
@@ -313,8 +313,8 @@ namespace BuildingSmart.Serialization.Xml
 			bool isNested = (t == null || reader.AttributeCount == 0) && nestedElementDefinition;
 			while (reader.Read())
 			{
-				if (reader.NodeType == XmlNodeType.Whitespace)
-					continue; 
+				if (reader.NodeType == XmlNodeType.Whitespace || reader.NodeType == XmlNodeType.Comment)
+					continue;
 				if(reader.NodeType == XmlNodeType.EndElement)
 				{
 					//System.Diagnostics.Debug.WriteLine(new string(' ', indent) + "!!ReadEntity " + readerLocalName + " " + (t == null ? "" : ": " + t.Name + ".") + reader.LocalName + " " + entity.ToString() + " " + reader.NodeType);

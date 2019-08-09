@@ -9820,6 +9820,7 @@ namespace IfcDoc
 				return;
 			XmlFolderSerializer folderSerializer = new XmlFolderSerializer(typeof(DocProject));
 			folderSerializer.AddFilePrefix(typeof(DocDefinition), "Ifc");
+			folderSerializer.AddFilePrefix(typeof(DocPropertyEnumeration), "PEnum_");
 			folderSerializer.WriteObject(folderBrowserDialog.SelectedPath, this.m_project);
 
 			//using (FormSaveFolder form = new FormSaveFolder())

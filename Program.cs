@@ -1082,15 +1082,29 @@ namespace IfcDoc
 					IfcPropertySetTemplate propertySetTemplate = definition as IfcPropertySetTemplate;
 					if (propertySetTemplate != null)
 					{
-						DocPropertySet propertySet = new DocPropertySet();
-						SetObject(propertySet, propertySetTemplate);
-						foreach(IfcPropertyTemplate template in propertySetTemplate.HasPropertyTemplates)
+						if (propertySetTemplate.TemplateType.ToString().ToUpper().StartsWith("QTO"))
 						{
-							DocProperty property = convert(template, project) as DocProperty;
-							propertySet.Properties.Add(property);
+							DocQuantitySet quantitySet = new DocQuantitySet();
+							SetObject(quantitySet, propertySetTemplate);
+							foreach (IfcPropertyTemplate template in propertySetTemplate.HasPropertyTemplates)
+							{
+								DocQuantity quantity = convert(template, project) as DocQuantity;
+								quantitySet.Quantities.Add(quantity);
+							}
+							schema.QuantitySets.Add(quantitySet);
 						}
+						else
+						{
+							DocPropertySet propertySet = new DocPropertySet();
+							SetObject(propertySet, propertySetTemplate);
+							foreach (IfcPropertyTemplate template in propertySetTemplate.HasPropertyTemplates)
+							{
+								DocProperty property = convert(template, project) as DocProperty;
+								propertySet.Properties.Add(property);
+							}
 
-						schema.PropertySets.Add(propertySet);
+							schema.PropertySets.Add(propertySet);
+						}
 					}
 					else
 					{ 
