@@ -7131,7 +7131,7 @@ namespace IfcDoc.Schema.DOC
 	/// </summary>
 	public class DocConstant : DocObject
 	{
-		[IgnoreDataMember] [XmlIgnore] [InverseProperty("Constants")] public HashSet<DocEnumeration> PartOfEnumeration { get; protected set; }
+		[IgnoreDataMember] [XmlIgnore] [InverseProperty("Constants")] public HashSet<DocEnumeration> PartOfEnumeration { get; protected set; } = new HashSet<DocEnumeration>();
 	}
 
 	public abstract class DocConstraint : DocObject
@@ -7542,7 +7542,8 @@ namespace IfcDoc.Schema.DOC
 	// new in IFCDOC 5.8
 	public class DocPropertyConstant : DocObject
 	{
-		[IgnoreDataMember] [XmlIgnore] [InverseProperty("Constants")] public HashSet<DocPropertyEnumeration> PartOfEnumeration { get; protected set; }
+		[IgnoreDataMember] [XmlIgnore] [InverseProperty("Constants")] public HashSet<DocPropertyEnumeration> PartOfEnumeration { get; protected set; } = new HashSet<DocPropertyEnumeration>();
+
 	}
 
 	/// <summary>
@@ -7618,7 +7619,7 @@ namespace IfcDoc.Schema.DOC
 		[DataMember(Order = 0)] [XmlAttribute] public DocQuantityTemplateTypeEnum QuantityType { get; set; } // IfcQuantityWeight, IfcQuantityLength, etc.
 		[DataMember(Order = 1)] [XmlAttribute] public DocStateEnum AccessState { get; set; } // V10.5
 
-		[IgnoreDataMember] [XmlIgnore] [InverseProperty("Quantities")] public HashSet<DocQuantitySet> PartOfQset { get; protected set; }
+		[IgnoreDataMember] [XmlIgnore] [InverseProperty("Quantities")] public HashSet<DocQuantitySet> PartOfQset { get; protected set; } = new HashSet<DocQuantitySet>();
 
 		public string GetEntityName()
 		{

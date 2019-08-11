@@ -4604,13 +4604,14 @@ namespace IfcDoc
 				DocProperty docPset = (DocProperty)this.treeView.SelectedNode.Tag;
 				docPset.Elements.Add(docProp);
 			}
+			m_project.Properties.Add(docProp);
 			docProp.PropertyType = DocPropertyTemplateTypeEnum.P_SINGLEVALUE;
 			this.treeView.SelectedNode = this.LoadNode(this.treeView.SelectedNode, docProp, docProp.Name, false);
 			this.toolStripMenuItemEditRename_Click(sender, e);
 		}
 		private void toolStripMenuItemIncludeProperty_Click(object sender, EventArgs e)
 		{
-			using (FormSelectProperty form = new FormSelectPropertyFromSchema(this.m_project, false))
+			using (FormSelectProperty form = new FormSelectGlobalProperty(this.m_project, false))
 			{
 				if (form.ShowDialog(this) == DialogResult.OK && form.SelectedProperty != null)
 				{
@@ -4761,12 +4762,15 @@ namespace IfcDoc
 
 		private void toolStripMenuItemInsertQuantity_Click(object sender, EventArgs e)
 		{
-			DocQuantitySet docPset = (DocQuantitySet)this.treeView.SelectedNode.Tag;
-			DocQuantity docProp = new DocQuantity();
-			docPset.Quantities.Add(docProp);
-			docProp.QuantityType = DocQuantityTemplateTypeEnum.Q_COUNT;
-			this.treeView.SelectedNode = this.LoadNode(this.treeView.SelectedNode, docProp, docProp.Name, false);
-			this.toolStripMenuItemEditRename_Click(sender, e);
+			TreeNode tn = this.treeView.SelectedNode;
+			if (tn.Tag == typeof(DocQuantity))
+			{
+				DocQuantity docQuantity = new DocQuantity();
+				this.m_project.Quantities.Add(docQuantity);
+
+				this.treeView.SelectedNode = this.LoadNode(tn, docQuantity, docQuantity.ToString(), false);
+				toolStripMenuItemEditRename_Click(this, e);
+			}
 		}
 
 		private void toolStripMenuItemInsertConceptRoot_Click(object sender, EventArgs e)
@@ -6858,7 +6862,7 @@ namespace IfcDoc
 		{
 			TreeNode tn = this.treeView.SelectedNode;
 
-			if (tn.Tag == typeof(DocEnumeration))
+			if (tn.Tag == typeof(DocPropertyEnumeration))
 			{
 				DocPropertyEnumeration docType = new DocPropertyEnumeration();
 				this.m_project.PropertyEnumerations.Add(docType);
@@ -6869,14 +6873,15 @@ namespace IfcDoc
 
 		private void toolStripMenuItemInsertPropertyConstant_Click(object sender, EventArgs e)
 		{
-			TreeNode tnParent = this.treeView.SelectedNode;
-			DocPropertyEnumeration docEnum = (DocPropertyEnumeration)tnParent.Tag;
+			TreeNode tn = this.treeView.SelectedNode;
+			if (tn.Tag == typeof(DocPropertyConstant))
+			{
+				DocPropertyConstant docPropertyConst = new DocPropertyConstant();
+				this.m_project.PropertyConstants.Add(docPropertyConst);
 
-			DocPropertyConstant docConst = new DocPropertyConstant();
-			docEnum.Constants.Add(docConst);
-
-			this.treeView.SelectedNode = this.LoadNode(tnParent, docConst, docConst.ToString(), false);
-			toolStripMenuItemEditRename_Click(this, e);
+				this.treeView.SelectedNode = this.LoadNode(tn, docPropertyConst, docPropertyConst.ToString(), false);
+				toolStripMenuItemEditRename_Click(this, e);
+			}
 		}
 
 		private void ctlExpressG_LinkOperation(object sender, EventArgs e)
@@ -7431,12 +7436,15 @@ namespace IfcDoc
 
 		private void toolStripMenuItemInsertEnumerationConstant_Click(object sender, EventArgs e)
 		{
-			TreeNode tnParent = this.treeView.SelectedNode;
-			DocEnumeration docEnum = (DocEnumeration)tnParent.Tag;
-			DocConstant docConstant = new DocConstant();
-			docEnum.Constants.Add(docConstant);
-			this.treeView.SelectedNode = this.LoadNode(tnParent, docConstant, docConstant.ToString(), false);
-			toolStripMenuItemEditRename_Click(this, e);
+			TreeNode tn = this.treeView.SelectedNode;
+			if (tn.Tag == typeof(DocConstant))
+			{
+				DocConstant docConst = new DocConstant();
+				this.m_project.Constants.Add(docConst);
+
+				this.treeView.SelectedNode = this.LoadNode(tn, docConst, docConst.ToString(), false);
+				toolStripMenuItemEditRename_Click(this, e);
+			}
 		}
 
 		private void toolStripMenuItemInsertComment_Click(object sender, EventArgs e)

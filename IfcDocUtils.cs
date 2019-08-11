@@ -122,6 +122,11 @@ namespace IfcDoc
 		public static DocProject LoadFile(string filePath)
 		{
 			List<object> instances = new List<object>();
+			return LoadFile(filePath, out instances);
+		}
+		public static DocProject LoadFile(string filePath, out List<object> instances)
+		{ 
+			instances = new List<object>();
 			string ext = System.IO.Path.GetExtension(filePath).ToLower();
 			string schema = "";
 			DocProject project = null;
