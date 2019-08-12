@@ -170,7 +170,7 @@ namespace BuildingSmart.Serialization.Xml
 									string nestedPath = Path.Combine(folderPath, removeInvalidFile(propertyInfo.Name));
 									Directory.CreateDirectory(nestedPath);
 									nestedProperties.Add(propertyInfo.Name);
-									if(xmlArrayItemAttribute.NestingLevel > 1)
+									if (xmlArrayItemAttribute.NestingLevel > 1)
 									{
 										string prefix = m_NominatedTypeFilePrefix.Count > 0 ? hasFilePrefix(genericType) : "";
 										IEnumerable<IGrouping<char, object>> groups = null;
@@ -181,7 +181,7 @@ namespace BuildingSmart.Serialization.Xml
 											int prefixLength = prefix.Length;
 											groups = enumerable.Cast<object>().GroupBy(x => char.ToLower(initialChar(uniqueIdProperty.GetValue(x).ToString(), prefix, prefixLength)));
 										}
-										foreach(IGrouping<char,object> group in groups)
+										foreach (IGrouping<char, object> group in groups)
 										{
 											string alphaPath = Path.Combine(nestedPath, group.Key.ToString());
 											Directory.CreateDirectory(alphaPath);
@@ -208,69 +208,53 @@ namespace BuildingSmart.Serialization.Xml
 							}
 						}
 					}
+				}
+				else
+				{
+					object propertyObject = propertyInfo.GetValue(obj);
+					if (propertyObject == null)
+					{
+						nestedProperties.Add(propertyInfo.Name);
+					}
 					else
 					{
-						object propertyObject = propertyInfo.GetValue(obj);
-						if (propertyObject == null)
+						DataType dataType = DataType.Custom;
+						string fileExtension = ".txt", txt = "";
+						foreach (DataTypeAttribute dataTypeAttribute in propertyInfo.GetCustomAttributes<DataTypeAttribute>())
 						{
-							nestedProperties.Add(propertyInfo.Name);
+							FileExtensionsAttribute fileExtensionsAttribute = dataTypeAttribute as FileExtensionsAttribute;
+							if (fileExtensionsAttribute != null && !string.IsNullOrEmpty(fileExtensionsAttribute.Extensions))
+								fileExtension = fileExtensionsAttribute.Extensions;
+							if (dataTypeAttribute.DataType != DataType.Custom)
+								dataType = dataTypeAttribute.DataType;
 						}
-						else
+						if (dataType == DataType.Html)
 						{
-							DataType dataType = DataType.Custom;
-							string fileExtension = ".txt", txt = "";
-							foreach (DataTypeAttribute dataTypeAttribute in propertyInfo.GetCustomAttributes<DataTypeAttribute>())
+							string html = propertyObject.ToString();
+							if (!string.IsNullOrEmpty(html))
 							{
-								FileExtensionsAttribute fileExtensionsAttribute = dataTypeAttribute as FileExtensionsAttribute;
-								if (fileExtensionsAttribute != null && !string.IsNullOrEmpty(fileExtensionsAttribute.Extensions))
-									fileExtension = fileExtensionsAttribute.Extensions;
-								if (dataTypeAttribute.DataType != DataType.Custom)
-									dataType = dataTypeAttribute.DataType;
+								nestedProperties.Add(propertyInfo.Name);
+								string htmlPath = Path.Combine(folderPath, propertyInfo.Name + ".html");
+								File.WriteAllText(htmlPath, html);
+								continue;
 							}
-							if (dataType == DataType.Html)
+						}
+						else if (dataType == DataType.MultilineText)
+						{
+							byte[] byteArray = propertyObject as byte[];
+							if (byteArray != null)
 							{
-								string html = propertyObject.ToString();
-								if (!string.IsNullOrEmpty(html))
-								{
-									nestedProperties.Add(propertyInfo.Name);
-									string htmlPath = Path.Combine(folderPath, propertyInfo.Name + ".html");
-									File.WriteAllText(htmlPath, html);
-									continue;
-								}
+								nestedProperties.Add(propertyInfo.Name);
+								txt = Encoding.ASCII.GetString(byteArray);
 							}
-							else if (dataType == DataType.MultilineText)
+							else
+								txt = propertyObject.ToString();
+							if (!string.IsNullOrEmpty(txt))
 							{
-								byte[] byteArray = propertyObject as byte[];
-								if (byteArray != null)
-								{
-									nestedProperties.Add(propertyInfo.Name);
-									txt = Encoding.ASCII.GetString(byteArray);
-								}
-								else
-									txt = propertyObject.ToString();
-								if (!string.IsNullOrEmpty(txt))
-								{
-									nestedProperties.Add(propertyInfo.Name);
-									string txtPath = Path.Combine(folderPath, propertyInfo.Name + fileExtension);
-									File.WriteAllText(txtPath, txt);
-									continue;
-								}
-							}
-							Type propertyObjectType = propertyObject.GetType();
-							if (!(propertyObjectType.IsValueType || propertyObjectType == stringType))
-							{
-								if (string.IsNullOrEmpty(_ObjectStore.EncounteredId(obj)))
-								{
-									DataContractAttribute dataContractAttribute = propertyObjectType.GetCustomAttribute<DataContractAttribute>(true);
-									if (dataContractAttribute == null || dataContractAttribute.IsReference)
-									{
-										string nestedPath = Path.Combine(folderPath, removeInvalidFile(propertyInfo.Name));
-										Directory.CreateDirectory(nestedPath);
-										queue.Enqueue(new QueueData(Path.Combine(nestedPath, removeInvalidFile(propertyInfo.Name) + ".xml"), propertyObject));
-										nestedProperties.Add(propertyInfo.Name);
-										_ObjectStore.MarkEncountered(propertyObject, ref nextID);
-									}
-								}
+								nestedProperties.Add(propertyInfo.Name);
+								string txtPath = Path.Combine(folderPath, propertyInfo.Name + fileExtension);
+								File.WriteAllText(txtPath, txt);
+								continue;
 							}
 						}
 					}
