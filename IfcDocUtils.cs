@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+
+using HtmlAgilityPack;
 
 using IfcDoc.Schema;
 using IfcDoc.Schema.DOC;
@@ -291,11 +294,19 @@ namespace IfcDoc
 			if (project == null)
 				return null;
 
-			if(schemaVersion > 0 && schemaVersion < 12.1)
+			if (schemaVersion > 0)
 			{
-				Dictionary<string, DocPropertyEnumeration> encounteredPropertyEnumerations = new Dictionary<string, DocPropertyEnumeration>();
-				foreach (DocSchema docSchema in project.Sections.SelectMany(x => x.Schemas))
-					extractListingsV12_1(project, docSchema, encounteredPropertyEnumerations);
+				if (schemaVersion < 12.1)
+				{
+					Dictionary<string, DocPropertyEnumeration> encounteredPropertyEnumerations = new Dictionary<string, DocPropertyEnumeration>();
+					foreach (DocSchema docSchema in project.Sections.SelectMany(x => x.Schemas))
+						extractListingsV12_1(project, docSchema, encounteredPropertyEnumerations);
+				}
+				if (schemaVersion < 12.2)
+				{
+					foreach (IDocumentation obj in instances.OfType<IDocumentation>().Where(x=> !string.IsNullOrEmpty(x.Documentation)))
+						obj.Documentation = convertToMarkdown(obj.Documentation);
+				}
 			}
 			foreach (DocModelView docModelView in project.ModelViews)
 			{
@@ -454,5 +465,348 @@ namespace IfcDoc
 				extractListings(project, element, encounteredPropertyEnumerations);
 		}
 
+
+		private static string openingTag(HtmlNode node)
+		{
+			string result = "<" + node.Name;
+			foreach (HtmlAttribute attribute in node.Attributes)
+				result += " " + attribute.Name + "=\"" + attribute.Value;
+			return result + ">";
+		}
+		private static string convertToMarkdown(string html)
+		{
+			HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
+			string documentation = Regex.Replace(html, @"<li>&quot;\s+", "<li>&quot;").Replace("<br/>\r\n", "<br/>");
+			doc.LoadHtml(documentation);
+			HtmlNode node = doc.DocumentNode;
+			return convertToMarkdown(node, new ConvertMarkdownOptions());
+		}
+		private static string convertToMarkdown(HtmlNode node, ConvertMarkdownOptions options)
+		{
+			ConvertMarkdownOptions childOptions = new ConvertMarkdownOptions(options);
+			if (node.NodeType == HtmlNodeType.Text)
+			{
+				string text = node.InnerText.Replace("&quot;", "\"");
+				if (!options.m_NestsCode)
+				{
+					Regex regex = new Regex("[ ]{2,}", RegexOptions.None);
+					text = regex.Replace(Regex.Replace(text, @"\n|\r", " "), " ");
+
+				}
+				string escaped = "";
+				foreach (char c in text)
+				{
+					if (c == '*')// || c == '\\' || c == '`' || c == '_' || c == '{' || c == '}' || c == '[' || c == ']' || c == '(' || c == ')' || c == '#' || c == '+' || c == '-' || c == '!' || c == '.')
+						escaped += '\\';
+					escaped += c;
+				}
+				return escaped;
+			}
+
+			if (node.NodeType == HtmlNodeType.Comment)
+				return "";
+
+			string result = "", suffix = "";
+			if (node.NodeType == HtmlNodeType.Document)
+			{
+				HtmlNode firstChild = node.FirstChild;
+				if (firstChild != null && string.Compare(firstChild.Name, "tr", true) == 0)
+				{
+					return node.OuterHtml;
+				}
+			}
+			if (node.NodeType == HtmlNodeType.Element)
+			{
+				if (node.HasAttributes)
+				{
+					string _class = "", id = "";
+					foreach (HtmlAttribute attribute in node.Attributes)
+					{
+						if (string.Compare(attribute.Name, "Class", true) == 0)
+							_class = attribute.Value;
+						else if (string.Compare(attribute.Name, "id", true) == 0)
+							id = attribute.Value;
+					}
+					if (!string.IsNullOrEmpty(id))
+						result += "{#" + id + (string.IsNullOrEmpty(_class) ? "}\r\n" : " ." + _class + "}\r\n");
+					else if (!string.IsNullOrEmpty(_class))
+						result += "{ ." + _class + "}\r\n";
+
+				}
+				string name = node.Name;
+				if (string.IsNullOrEmpty(name))
+					return node.OuterHtml;
+				if (string.Compare(name, "a", true) == 0)
+				{
+					result = "";
+					string href = "", target = "", _class = "", id = "";
+					foreach (HtmlAttribute attribute in node.Attributes)
+					{
+						name = attribute.Name;
+						if (string.Compare(name, "href", true) == 0)
+							href = attribute.Value;
+						else if (string.Compare(name, "target", true) == 0)
+							target = attribute.Value;
+						else if (string.Compare(name, "class", true) == 0)
+							_class = attribute.Value;
+						else if (string.Compare(name, "id", true) == 0)
+							id = attribute.Value;
+						else
+						{
+							suffix = "";
+						}
+					}
+					if (!string.IsNullOrEmpty(href))
+					{
+						result += "[";
+						suffix = "](" + href + ")";
+					}
+					if (!string.IsNullOrEmpty(_class) || !string.IsNullOrEmpty(id) || !string.IsNullOrEmpty(target))
+						suffix += "{" + (string.IsNullOrEmpty(id) ? "" : "#" + id) + (string.IsNullOrEmpty(_class) ? "" : " ." + _class) + (string.IsNullOrEmpty(target) ? "" : " target=\"" + target + "\"") + "}";
+				}
+				else if (string.Compare(name, "b", true) == 0 || string.Compare(name, "strong", true) == 0)
+				{
+					result += "**";
+					suffix = "**";
+				}
+				else if (string.Compare(name, "blockquote", true) == 0)
+				{
+					if (node.ChildNodes.Count == 1)
+					{
+						if (string.Compare(node.FirstChild.Name, "code", true) == 0)
+							return convertToMarkdown(node.FirstChild, new ConvertMarkdownOptions(childOptions) { m_NestsCode = true });
+						if (string.Compare(node.FirstChild.Name, "table", true) == 0)
+							return convertToMarkdown(node.FirstChild, childOptions);
+					}
+					result += "> ";
+					suffix = "\r\n\r\n";
+				}
+				else if (string.Compare(name, "big", true) == 0)
+					return node.OuterHtml;
+				else if (string.Compare(name, "br", true) == 0)
+					suffix = "  \r\n";
+				else if (string.Compare(name, "code", true) == 0)
+				{
+					result += "\r\n~~~\r\n";
+					suffix = "\r\n~~~\r\n";
+					childOptions.m_NestsCode = true;
+				}
+				else if (string.Compare(name, "div", true) == 0)
+					return node.OuterHtml;
+				else if (string.Compare(name, "em", true) == 0 || string.Compare(name, "i", true) == 0)
+				{
+					result += "_";
+					suffix = "_";
+				}
+				else if (string.Compare(name, "epm-html", true) == 0)
+				{
+					//ignore
+				}
+				else if (string.Compare(name, "font", true) == 0)
+					return node.OuterHtml;
+				else if (name.Length == 2 && name[0] == 'h' && char.IsDigit(name[1]))
+				{
+					int count = 0;
+					if (int.TryParse(name.Substring(1), out count))
+					{
+						if (count == 1)
+							suffix = "\r\n=======\r\n";
+						else
+						{
+							result += new String('#', count) + " ";
+							suffix = "\r\n";
+						}
+					}
+				}
+				else if (string.Compare(name, "hr", true) == 0)
+					return "___" + "\r\n";
+				else if (string.Compare(name, "img", true) == 0)
+				{
+					string alt = "Image", source = "";
+					foreach (HtmlAttribute attribute in node.Attributes)
+					{
+						if (string.Compare(attribute.Name, "src", true) == 0)
+							source = attribute.Value;
+						else if (string.Compare(attribute.Name, "alt", true) == 0)
+							alt = attribute.Value;
+						else
+						{
+							suffix = "";
+						}
+
+						if (!string.IsNullOrEmpty(source))
+							return "![" + alt + "](" + source + ")\r\n";
+					}
+				}
+				else if (string.Compare(name, "li", true) == 0 || string.Compare(name, "td", true) == 0 || string.Compare(name, "th", true) == 0)
+				{
+					//handled in parent
+				}
+				else if (string.Compare(name, "ol", true) == 0)
+					return convertListToMarkdown(node, childOptions, true) + suffix;
+				else if (string.Compare(name, "noscript", true) == 0)
+					return node.OuterHtml;
+				else if (string.Compare(name, "p", true) == 0)
+					suffix = "\r\n\r\n";
+				else if (string.Compare(name, "pre", true) == 0)
+					return node.OuterHtml;
+				else if (string.Compare(name, "small", true) == 0)
+					return node.OuterHtml;
+				else if (string.Compare(name, "span", true) == 0)
+					return node.OuterHtml;
+				else if (string.Compare(name, "strike", true) == 0)
+					return node.OuterHtml;
+				else if (string.Compare(name, "sub", true) == 0)
+					return node.OuterHtml;
+				else if (string.Compare(name, "sup", true) == 0)
+					return node.OuterHtml;
+				else if (string.Compare(name, "super", true) == 0)
+					return node.OuterHtml;
+				else if (string.Compare(name, "table", true) == 0)
+				{
+					return node.OuterHtml + "\r\n\r\n";
+					//List<string> headerRow = new List<string>();
+					//List<string> delimiterRow = new List<string>();
+					//string body = "";
+					//if (node.ChildNodes.Count > 0)
+					//{
+					//	foreach (HtmlNode tr in node.FirstChild.ChildNodes)
+					//	{
+					//		extractTableHeader(tr, childOptions, ref headerRow, ref delimiterRow);
+					//	}
+
+					//	result += string.Join(" | ", headerRow) + "\r\n";
+					//	result += string.Join(" | ", delimiterRow) + "\r\n";
+					//	foreach (HtmlNode hn in node.ChildNodes.Skip(1))
+					//	{
+					//		List<string> row = new List<string>();
+					//		if (string.Compare(hn.Name, "tr", true) == 0)
+					//		{
+					//			extractTableRow(hn, childOptions, ref row);
+					//			if (row.Count > 0)
+					//				body +=  string.Join(" | ", row) + "\r\n";
+					//		}
+					//		else if (string.Compare(hn.Name, "tbody", true) == 0)
+					//		{
+					//			foreach (HtmlNode tr in hn.ChildNodes)
+					//			{
+					//				if (string.Compare(tr.Name, "tr", true) == 0)
+					//				{
+					//					extractTableRow(tr, options, ref row);
+					//					if (row.Count > 0)
+					//						body += "| " + string.Join(" | ", row) + " |\r\n";
+					//				}
+					//			}
+					//		}
+					//	}
+					//	return result + body + "\r\n\r\n";
+					//}
+				}
+				else if (string.Compare(name, "u", true) == 0)
+					return node.OuterHtml;
+				else if (string.Compare(name, "ul", true) == 0)
+					return convertListToMarkdown(node, childOptions, false);
+				else
+					return node.OuterHtml;
+			}
+
+			if (node.ChildNodes.Count == 0)
+				return result + node.InnerText + suffix;
+
+			string inner = "";
+			foreach (HtmlNode n in node.ChildNodes)
+			{
+				if (string.Compare(n.Name, "br", true) == 0)
+					inner += "  \r\n";
+				else
+				{
+					string str = convertToMarkdown(n, childOptions);
+					if (!string.IsNullOrWhiteSpace(str))
+						inner += str;
+				}
+			}
+
+			if (childOptions.m_NestsCode)
+				inner = inner.Trim("\r\n".ToCharArray());
+			else
+				inner = inner.Trim();
+			return result + inner + suffix;
+		}
+
+		private static void extractTableHeader(HtmlNode node, ConvertMarkdownOptions options, ref List<string> headerRow, ref List<string> delimiterRow)
+		{
+			if (string.Compare(node.Name, "td", true) == 0 || string.Compare(node.Name, "th", true) == 0)
+			{
+				string headerValue = convertToMarkdown(node, options).Trim();
+				headerRow.Add(headerValue);
+				delimiterRow.Add(new String('-', Math.Max(3, headerValue.Length)));
+				return;
+			}
+			foreach (HtmlNode n in node.ChildNodes)
+			{
+				extractTableHeader(n, options, ref headerRow, ref delimiterRow);
+			}
+		}
+		private static void extractTableRow(HtmlNode node, ConvertMarkdownOptions options, ref List<string> row)
+		{
+			if (string.Compare(node.Name, "td", true) == 0)
+			{
+				string value = convertToMarkdown(node, options).Trim();
+				if (!string.IsNullOrEmpty(value))
+					row.Add(value);
+				return;
+			}
+			foreach (HtmlNode n in node.ChildNodes)
+			{
+				extractTableRow(n, options, ref row);
+			}
+		}
+		private static string convertListToMarkdown(HtmlNode node, ConvertMarkdownOptions options, bool isOrdered)
+		{
+			string result = "";
+			int count = 1;
+			foreach (HtmlNode hn in node.ChildNodes)
+			{
+				string listValue = convertToMarkdown(hn, options).Trim();
+				if (!string.IsNullOrEmpty(listValue))
+				{
+					if (listValue.Contains("\r\n"))
+					{
+						result = "";
+						break;
+					}
+
+					result += (isOrdered ? count + ". " : "* ") + listValue + "\r\n";
+					count++;
+				}
+			}
+			if (!string.IsNullOrEmpty(result)) // simple list
+				return result + "\r\n";
+
+			//result += openingTag(node) + "\r\n";
+			//foreach (HtmlNode hn in node.ChildNodes)
+			//{
+			//	string listValue = convertToMarkdown(hn, true).Trim();
+			//	if (!string.IsNullOrEmpty(listValue))
+			//		result += openingTag(hn) + listValue + "\r\n</" + hn.Name + ">\r\n";
+			//}
+			//return result + "\r\n</" + node.Name + ">\r\n";
+			return node.OuterHtml;
+		}
+
+
+		private class ConvertMarkdownOptions
+		{
+			internal bool m_NestsCode = false;
+			internal bool m_CollapseLines = false;
+
+			internal ConvertMarkdownOptions() { }
+			internal ConvertMarkdownOptions(ConvertMarkdownOptions config)
+			{
+				m_NestsCode = config.m_NestsCode;
+				m_CollapseLines = config.m_CollapseLines;
+			}
+
+		}
 	}
 }

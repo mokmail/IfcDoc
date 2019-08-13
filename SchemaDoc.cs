@@ -61,6 +61,8 @@ namespace IfcDoc.Schema.DOC
 			get;
 			set;
 		}
+
+		string DocumentationHtml();
 	}
 
 	/// <summary>
@@ -75,7 +77,7 @@ namespace IfcDoc.Schema.DOC
 		[DataMember(Order = 1)] [XmlAttribute] public DocCategoryEnum Category { get; set; }
 		// localized name if locale provided, or system identifier (e.g. guid) used for bsDD
 		[DataMember(Order = 2)] public string Name { get; set; }
-		[DataMember(Order = 3)] [XmlElement] [DataType(DataType.Html)] public string Documentation { get; set; }
+		[DataMember(Order = 3)] [XmlElement] [FileExtensions(Extensions = ".md"), DataType(DataType.MultilineText)] public string Documentation { get; set; }
 		[DataMember(Order = 4)] [XmlAttribute] public string URL { get; set; } // URL of remote system, e.g. http://bsdd.buildingsmart.org or http://test.bsdd.buildingsmart.org
 
 		public int CompareTo(object obj)
@@ -114,6 +116,11 @@ namespace IfcDoc.Schema.DOC
 
 			return null;
 		}
+
+		public string DocumentationHtml()
+		{
+			return Format.HTM.FormatHTM.MarkdownToHtml(Documentation);
+		}
 	}
 
 	public enum DocCategoryEnum
@@ -144,7 +151,7 @@ namespace IfcDoc.Schema.DOC
 		IComparable
 	{
 		[DataMember(Order = 0)] [XmlAttribute] public string Name { get; set; } // the identifier (shows in tree)
-		[DataMember(Order = 1)] [XmlElement] [DataType(DataType.Html)] public string Documentation { get; set; } // the documentation (synchronized with Visual Express)
+		[DataMember(Order = 1)] [XmlElement] [FileExtensions(Extensions = ".md"), DataType(DataType.MultilineText)] public string Documentation { get; set; } // the documentation (synchronized with Visual Express)
 		[DataMember(Order = 2)] [XmlAttribute] public string UniqueId { get; set; } = Guid.NewGuid().ToString(); // V1.8 inserted
 		[DataMember(Order = 3)] [XmlAttribute] public string Code { get; set; } // V1.8 inserted // e.g. 'bsi-100' 
 		[DataMember(Order = 4)] [XmlAttribute] public string Version { get; set; } // V1.8 inserted
@@ -365,6 +372,10 @@ namespace IfcDoc.Schema.DOC
 				return string.Compare(templateA.id, templateB.id);
 			}
 
+		}
+		public string DocumentationHtml()
+		{
+			return Format.HTM.FormatHTM.MarkdownToHtml(Documentation);
 		}
 	}
 

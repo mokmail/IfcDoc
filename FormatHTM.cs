@@ -3017,7 +3017,7 @@ namespace IfcDoc.Format.HTM
 				foreach (DocLocalization doclocal in entity.Localization)
 				{
 					string localname = doclocal.Name;
-					string localdesc = doclocal.Documentation;
+					string localdesc = doclocal.DocumentationHtml();
 
 					string localid = doclocal.Locale.Substring(0, 2).ToLower();
 					if (localid.Equals("en", StringComparison.InvariantCultureIgnoreCase) && localdesc == null)
@@ -3508,6 +3508,19 @@ namespace IfcDoc.Format.HTM
 			}
 
 
+		}
+
+		public static string MarkdownToHtml(string markdown)
+		{
+			if (string.IsNullOrEmpty(markdown))
+				return null;
+			Markdig.MarkdownPipelineBuilder builder = new Markdig.MarkdownPipelineBuilder();
+			builder.Extensions.Add(new Markdig.Extensions.GenericAttributes.GenericAttributesExtension());
+			builder.Extensions.Add(new Markdig.Extensions.Tables.PipeTableExtension());
+
+			Markdig.MarkdownPipeline pipeline = builder.Build();
+
+			return Markdig.Markdown.ToHtml(markdown, pipeline);
 		}
 	}
 
