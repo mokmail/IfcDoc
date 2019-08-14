@@ -2996,7 +2996,7 @@ namespace IfcDoc.Schema.DOC
 	public class DocConceptRoot : DocObject
 	{
 		[DataMember(Order = 0)] [XmlElement] public DocEntity ApplicableEntity { get; set; }
-		[DataMember(Order = 1)] [XmlArray] public List<DocTemplateUsage> Concepts { get; protected set; }
+		[DataMember(Order = 1)] [XmlArray] [XmlArrayItem(NestingLevel = 1)] public List<DocTemplateUsage> Concepts { get; protected set; }
 		[DataMember(Order = 2)] [XmlElement] public DocTemplateDefinition ApplicableTemplate { get; set; } // V9.3: optional template definition to be used for determining applicability
 		[DataMember(Order = 3)] [XmlArray] public List<DocTemplateItem> ApplicableItems { get; protected set; } // V9.3: items used for template definition
 		[DataMember(Order = 4)] [XmlElement] public DocTemplateOperator ApplicableOperator { get; set; } // V9.3: operator used for items
