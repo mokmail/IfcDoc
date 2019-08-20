@@ -7204,7 +7204,7 @@ namespace IfcDoc.Schema.DOC
 			this.Properties = new List<DocProperty>();
 		}
 
-		internal DocProperty RegisterProperty(string p)
+		internal DocProperty RegisterProperty(string p, DocProject project)
 		{
 			foreach (DocProperty docProperty in this.Properties)
 			{
@@ -7216,6 +7216,7 @@ namespace IfcDoc.Schema.DOC
 			q.Name = p;
 			this.Properties.Add(q);
 			q.PartOfPset.Add(this);
+			project.Properties.Add(q);
 			return q;
 		}
 
@@ -7558,7 +7559,7 @@ namespace IfcDoc.Schema.DOC
 			this.Quantities = new List<DocQuantity>();
 		}
 
-		internal DocQuantity RegisterQuantity(string p)
+		internal DocQuantity RegisterQuantity(string p, DocProject project)
 		{
 			foreach (DocQuantity docQuantity in this.Quantities)
 			{
@@ -7569,6 +7570,7 @@ namespace IfcDoc.Schema.DOC
 			DocQuantity q = new DocQuantity();
 			this.Quantities.Add(q);
 			q.Name = p;
+			project.Quantities.Add(q);
 			return q;
 		}
 

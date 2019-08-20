@@ -1983,7 +1983,7 @@ namespace IfcDoc
 
 			foreach (PropertyDef subdef in psd.PropertyDefs)
 			{
-				DocProperty docprop = pset.RegisterProperty(subdef.Name);
+				DocProperty docprop = pset.RegisterProperty(subdef.Name, docProject);
 				Program.ImportPsdPropertyTemplate(subdef, docprop, docProject, docSchema);
 			}
 

@@ -479,7 +479,7 @@ namespace IfcDoc
 
 										foreach (QtoDef qtodef in qto.QtoDefs)
 										{
-											DocQuantity q = qset.RegisterQuantity(qtodef.Name);
+											DocQuantity q = qset.RegisterQuantity(qtodef.Name, m_project);
 											q.Documentation = qtodef.Definition;
 
 											switch (qtodef.QtoType)
