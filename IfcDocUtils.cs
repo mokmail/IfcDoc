@@ -477,6 +477,7 @@ namespace IfcDoc
 		{
 			HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
 			string documentation = Regex.Replace(html, @"<li>&quot;\s+", "<li>&quot;").Replace("<br/>\r\n", "<br/>");
+			documentation = DocumentationISO.UpdateNumbering(documentation, new List<DocumentationISO.ContentRef>(), new List<DocumentationISO.ContentRef>(), null);
 			doc.LoadHtml(documentation);
 			HtmlNode node = doc.DocumentNode;
 			return convertToMarkdown(node, new ConvertMarkdownOptions());
@@ -664,43 +665,7 @@ namespace IfcDoc
 					return node.OuterHtml;
 				else if (string.Compare(name, "table", true) == 0)
 				{
-					return node.OuterHtml + "\r\n\r\n";
-					//List<string> headerRow = new List<string>();
-					//List<string> delimiterRow = new List<string>();
-					//string body = "";
-					//if (node.ChildNodes.Count > 0)
-					//{
-					//	foreach (HtmlNode tr in node.FirstChild.ChildNodes)
-					//	{
-					//		extractTableHeader(tr, childOptions, ref headerRow, ref delimiterRow);
-					//	}
-
-					//	result += string.Join(" | ", headerRow) + "\r\n";
-					//	result += string.Join(" | ", delimiterRow) + "\r\n";
-					//	foreach (HtmlNode hn in node.ChildNodes.Skip(1))
-					//	{
-					//		List<string> row = new List<string>();
-					//		if (string.Compare(hn.Name, "tr", true) == 0)
-					//		{
-					//			extractTableRow(hn, childOptions, ref row);
-					//			if (row.Count > 0)
-					//				body +=  string.Join(" | ", row) + "\r\n";
-					//		}
-					//		else if (string.Compare(hn.Name, "tbody", true) == 0)
-					//		{
-					//			foreach (HtmlNode tr in hn.ChildNodes)
-					//			{
-					//				if (string.Compare(tr.Name, "tr", true) == 0)
-					//				{
-					//					extractTableRow(tr, options, ref row);
-					//					if (row.Count > 0)
-					//						body += "| " + string.Join(" | ", row) + " |\r\n";
-					//				}
-					//			}
-					//		}
-					//	}
-					//	return result + body + "\r\n\r\n";
-					//}
+					return convertTable(node, options);
 				}
 				else if (string.Compare(name, "u", true) == 0)
 					return node.OuterHtml;
@@ -733,6 +698,50 @@ namespace IfcDoc
 			return result + inner + suffix;
 		}
 
+		private static string convertTable(HtmlNode node, ConvertMarkdownOptions options)
+		{
+			if(node.ChildNodes.Count == 2)
+			{
+
+			}
+			return node.OuterHtml + "\r\n\r\n";
+			//List<string> headerRow = new List<string>();
+			//List<string> delimiterRow = new List<string>();
+			//string body = "";
+			//if (node.ChildNodes.Count > 0)
+			//{
+			//	foreach (HtmlNode tr in node.FirstChild.ChildNodes)
+			//	{
+			//		extractTableHeader(tr, childOptions, ref headerRow, ref delimiterRow);
+			//	}
+
+			//	result += string.Join(" | ", headerRow) + "\r\n";
+			//	result += string.Join(" | ", delimiterRow) + "\r\n";
+			//	foreach (HtmlNode hn in node.ChildNodes.Skip(1))
+			//	{
+			//		List<string> row = new List<string>();
+			//		if (string.Compare(hn.Name, "tr", true) == 0)
+			//		{
+			//			extractTableRow(hn, childOptions, ref row);
+			//			if (row.Count > 0)
+			//				body +=  string.Join(" | ", row) + "\r\n";
+			//		}
+			//		else if (string.Compare(hn.Name, "tbody", true) == 0)
+			//		{
+			//			foreach (HtmlNode tr in hn.ChildNodes)
+			//			{
+			//				if (string.Compare(tr.Name, "tr", true) == 0)
+			//				{
+			//					extractTableRow(tr, options, ref row);
+			//					if (row.Count > 0)
+			//						body += "| " + string.Join(" | ", row) + " |\r\n";
+			//				}
+			//			}
+			//		}
+			//	}
+			//	return result + body + "\r\n\r\n";
+			//}
+		}
 		private static void extractTableHeader(HtmlNode node, ConvertMarkdownOptions options, ref List<string> headerRow, ref List<string> delimiterRow)
 		{
 			if (string.Compare(node.Name, "td", true) == 0 || string.Compare(node.Name, "th", true) == 0)
