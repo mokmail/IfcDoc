@@ -479,7 +479,7 @@ namespace IfcDoc
 
 										foreach (QtoDef qtodef in qto.QtoDefs)
 										{
-											DocQuantity q = qset.RegisterQuantity(qtodef.Name);
+											DocQuantity q = qset.RegisterQuantity(qtodef.Name, m_project);
 											q.Documentation = qtodef.Definition;
 
 											switch (qtodef.QtoType)
@@ -3162,6 +3162,9 @@ namespace IfcDoc
 
 					this.toolStripMenuItemContextIncludeProperty.Visible = true;
 					this.toolStripMenuItemContextInclude.Visible = true;
+
+					this.toolStripMenuItemContextInsert.Visible = true;
+					this.toolStripMenuItemContextInsertProperty.Visible = true;
 
 					this.ToolStripMenuItemEditCut.Enabled = true;
 					this.toolStripMenuItemEditPaste.Enabled = (this.m_clipboard is DocProperty);

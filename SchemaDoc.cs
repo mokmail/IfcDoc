@@ -163,7 +163,7 @@ namespace IfcDoc.Schema.DOC
 
 		public object Tag; // for holding UI state, e.g. tree node
 
-		[IgnoreDataMember] public virtual string id { get { return xmlid(); } }
+		[IgnoreDataMember] public string id { get { return xmlid(); } }
 		// v1.8: inserted fields Code, Version, Status, Author, Owner, Copyright to support MVD-XML
 
 		protected DocObject()
@@ -313,7 +313,7 @@ namespace IfcDoc.Schema.DOC
 		}
 
 		// GlobalId reduces chances of long path
-		protected string xmlid() { return (string.IsNullOrEmpty(Name) ? "" : Name + "_") + GlobalId.Format(Uuid); }
+		protected virtual string xmlid() { return (string.IsNullOrEmpty(Name) ? "" : Name + "_") + GlobalId.Format(Uuid); }
 		/*
         [Category("Misc")]
         public string Status
@@ -3007,12 +3007,12 @@ namespace IfcDoc.Schema.DOC
 	public class DocConceptRoot : DocObject
 	{
 		[DataMember(Order = 0)] [XmlElement] public DocEntity ApplicableEntity { get; set; }
-		[DataMember(Order = 1)] [XmlArray] public List<DocTemplateUsage> Concepts { get; protected set; }
+		[DataMember(Order = 1)] [XmlArray] [XmlArrayItem(NestingLevel = 1)] public List<DocTemplateUsage> Concepts { get; protected set; }
 		[DataMember(Order = 2)] [XmlElement] public DocTemplateDefinition ApplicableTemplate { get; set; } // V9.3: optional template definition to be used for determining applicability
 		[DataMember(Order = 3)] [XmlArray] public List<DocTemplateItem> ApplicableItems { get; protected set; } // V9.3: items used for template definition
 		[DataMember(Order = 4)] [XmlElement] public DocTemplateOperator ApplicableOperator { get; set; } // V9.3: operator used for items
 
-		[IgnoreDataMember] public override string id { get { return (ApplicableEntity == null ? "" : ApplicableEntity.Name + "_") + GlobalId.Format(Uuid); } }
+		protected override string xmlid() { return (ApplicableEntity == null ? "" : ApplicableEntity.Name + "_") + GlobalId.Format(Uuid); } 
 
 		public DocConceptRoot()
 		{
@@ -3630,6 +3630,9 @@ namespace IfcDoc.Schema.DOC
 	{
 		[DataMember(Order = 0)] [XmlArray] public List<DocTemplateDefinition> References { get; protected set; } // IfcDoc 6.3: references to chained templates
 		[DataMember(Order = 1)] [XmlAttribute] public string Prefix { get; set; }
+		[DataMember(Order = 2)] [XmlAttribute] public string UniqueId { get; set; } = Guid.NewGuid().ToString(); // V12.2 inserted
+
+		[IgnoreDataMember] public string id { get { return UniqueId; } }
 
 		public DocModelRuleEntity()
 		{
@@ -6617,7 +6620,7 @@ namespace IfcDoc.Schema.DOC
 	/// </summary>
 	public class DocPrimitive : DocDefinition // 5.8
 	{
-		[IgnoreDataMember] public override string id { get { return Name; } }
+		//protected override string xmlid() { return Name; } 
 	}
 
 	/// <summary>
@@ -6846,7 +6849,7 @@ namespace IfcDoc.Schema.DOC
 			DefaultMember = null;
 		}
 
-		[IgnoreDataMember] public override string id { get { return Name; } }
+		protected override string xmlid() { return Name; } 
 	}
 	public class DocSubtype : DocObject
 	{
@@ -7076,7 +7079,7 @@ namespace IfcDoc.Schema.DOC
 	/// </summary>
 	public abstract class DocType : DocDefinition
 	{
-		[IgnoreDataMember] public override string id { get { return Name; } }
+		protected override string xmlid() { return Name; } 
 	}
 
 	/// <summary>
@@ -7215,7 +7218,7 @@ namespace IfcDoc.Schema.DOC
 			this.Properties = new List<DocProperty>();
 		}
 
-		internal DocProperty RegisterProperty(string p)
+		internal DocProperty RegisterProperty(string p, DocProject project)
 		{
 			foreach (DocProperty docProperty in this.Properties)
 			{
@@ -7227,6 +7230,7 @@ namespace IfcDoc.Schema.DOC
 			q.Name = p;
 			this.Properties.Add(q);
 			q.PartOfPset.Add(this);
+			project.Properties.Add(q);
 			return q;
 		}
 
@@ -7284,7 +7288,7 @@ namespace IfcDoc.Schema.DOC
 			return docEnt;
 		}
 
-		[IgnoreDataMember] public override string id { get { return Name; } }
+		protected override string xmlid() { return Name; } 
 	}
 
 	public enum DocStateEnum // matches IfcStateEnum
@@ -7468,7 +7472,7 @@ namespace IfcDoc.Schema.DOC
 
 			return docAttr;
 		}
-		public override string id { get { return (PropertyType == DocPropertyTemplateTypeEnum.COMPLEX ? "zz" : "") + base.id; } }
+		protected override string xmlid() { return (PropertyType == DocPropertyTemplateTypeEnum.COMPLEX ? "zz" : "") + base.xmlid(); } 
 
 		internal DocChangeAction DetectChanges(DocProperty baseProperty)
 		{
@@ -7569,7 +7573,7 @@ namespace IfcDoc.Schema.DOC
 			this.Quantities = new List<DocQuantity>();
 		}
 
-		internal DocQuantity RegisterQuantity(string p)
+		internal DocQuantity RegisterQuantity(string p, DocProject project)
 		{
 			foreach (DocQuantity docQuantity in this.Quantities)
 			{
@@ -7580,6 +7584,7 @@ namespace IfcDoc.Schema.DOC
 			DocQuantity q = new DocQuantity();
 			this.Quantities.Add(q);
 			q.Name = p;
+			project.Quantities.Add(q);
 			return q;
 		}
 
@@ -7619,7 +7624,7 @@ namespace IfcDoc.Schema.DOC
 			return docEnt;
 		}
 
-		[IgnoreDataMember] public override string id { get { return Name; } }
+		protected override string xmlid() { return Name; } 
 	}
 
 	/// <summary>

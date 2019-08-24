@@ -1041,7 +1041,9 @@ namespace IfcDoc
 
 		internal static void SetObject(DocObject obj, IfcRoot root)
 		{
-			obj.UniqueId = GlobalId.Parse(root.GlobalId).ToString();
+			Guid guid = GlobalId.Parse(root.GlobalId);
+			if(guid != Guid.Empty)
+				obj.UniqueId = guid.ToString();
 			obj.Name = root.Name;
 		 	obj.Documentation = root.Description;
 
@@ -1058,8 +1060,241 @@ namespace IfcDoc
 			return new IfcGloballyUniqueId(GlobalId.Format(Guid.NewGuid()));
 		}
 
+		private class ImportAggregate
+		{
+			private DocProject m_Project = null;
+			Dictionary<string, DocProperty> propertyTemplates = new Dictionary<string, DocProperty>();
+			Dictionary<string, DocQuantity> quantityTemplates = new Dictionary<string, DocQuantity>();
+			Dictionary<string, DocPropertyEnumeration> propertyEnumerations = new Dictionary<string, DocPropertyEnumeration>();
+
+			internal ImportAggregate(DocProject project)
+			{
+				m_Project = project;
+			}
+
+			internal string uniqueId(IfcGloballyUniqueId globalId)
+			{
+				Guid guid = GlobalId.Parse(globalId);
+				return (guid == Guid.Empty ? Guid.NewGuid() : guid).ToString();
+			}
+			internal void createOrFindQuantityTemplate(IfcPropertyTemplate template, DocQuantitySet host, ref List<string> changes)
+			{
+				string id = uniqueId(template.GlobalId);
+				DocQuantity result = null, processed = null;
+				string change = "";
+				if (quantityTemplates.TryGetValue(id, out processed))
+				{
+					if (host == null)
+						return;
+					change = "  PROCESSED Quantity " + template.Name;
+					result = processed;
+				}
+				else
+				{
+					result = m_Project.Quantities.Where(x => string.Compare(x.UniqueId, id) == 0).FirstOrDefault();
+					if (result == null)
+					{
+						DocQuantity existing = host.Quantities.Where(x => string.Compare(x.Name, template.Name) == 0).FirstOrDefault();
+						if (existing == null)
+						{
+							change = "  NEW Quantity " + template.Name;
+							result = new DocQuantity() { Name = template.Name, UniqueId = id, Documentation = template.Description };
+							m_Project.Quantities.Add(result);
+						}
+					}
+					else
+					{
+						change = "  EXISTING Quantity " + template.Name;
+					}
+				}
+				if (host != null)
+				{
+					DocQuantity hosted = host.Quantities.Where(x => string.Compare(x.UniqueId, id) == 0).FirstOrDefault();
+					if (hosted == null)
+					{
+						change += " ADDED";
+						host.Quantities.Add(result);
+					}
+					else
+						change += " EXISTING";
+				}
+				changes.Add(change);
+				if (processed == null)
+				{
+					IfcSimplePropertyTemplate simpleTemplate = template as IfcSimplePropertyTemplate;
+					if (simpleTemplate != null)
+						set(simpleTemplate, result, ref changes);
+					else
+						changes.Add("  XX Quantity not defined as IfcSimplePropertyTemplate");
+				}
+				quantityTemplates[id] = result;
+			}
+			internal void set(IfcSimplePropertyTemplate template, DocQuantity quantity, ref List<string> changes)
+			{
+				if (template.TemplateType == null)
+					changes.Add("  XXX " + template.Name + " has no nominated quantity template type!");
+				else
+				{
+					DocQuantityTemplateTypeEnum templateType = DocQuantityTemplateTypeEnum.Q_AREA;
+					if (Enum.TryParse<DocQuantityTemplateTypeEnum>(template.TemplateType.ToString(), out templateType))
+						quantity.QuantityType = templateType;
+					else
+						changes.Add("  XXX " + template.Name + " has invalid quantity template type!");
+				}
+				if (template.AccessState != null)
+				{
+					DocStateEnum state = DocStateEnum.READWRITE;
+					if (Enum.TryParse<DocStateEnum>(template.AccessState.ToString(), out state))
+						quantity.AccessState = state;
+					else
+						changes.Add("  XXX " + template.Name + " has invalid Access State!");
+				}
+			}
+
+			internal DocProperty createOrFindPropertyTemplate(IfcPropertyTemplate template, DocPropertySet host, ref List<string> changes)
+			{
+				string id = uniqueId(template.GlobalId);
+				DocProperty result = null, processed = null;
+				string change = "";
+				if (propertyTemplates.TryGetValue(id, out processed))
+				{
+					if (host == null)
+						return processed;
+					change = "  PROCESSED Property " + template.Name;
+					result = processed;
+				}
+				else
+				{
+					result = m_Project.Properties.Where(x => string.Compare(x.UniqueId, id) == 0).FirstOrDefault();
+					if (result == null)
+					{
+						DocProperty existing = host.Properties.Where(x => string.Compare(x.Name, template.Name) == 0).FirstOrDefault();
+						if (existing == null)
+						{
+							change = "  NEW Property " + template.Name;
+							result = new DocProperty() { Name = template.Name, UniqueId = id, Documentation = template.Description };
+							m_Project.Properties.Add(result);
+						}
+					}
+					else
+					{
+						change = "  EXISTING Property " + template.Name;
+					}
+				}
+				if (host != null)
+				{
+					DocProperty hosted = host.Properties.Where(x => string.Compare(x.UniqueId, id) == 0).FirstOrDefault();
+					if (hosted == null)
+					{
+						change += " ADDED";
+						host.Properties.Add(result);
+					}
+					else
+						change += " EXISTING";
+				}
+				changes.Add(change);
+				if (processed == null)
+					set(template, result, ref changes);
+				propertyTemplates[id] = result;
+				return result;
+			}
+
+			internal void set(IfcPropertyTemplate template, DocProperty property, ref List<string> changes)
+			{
+				IfcSimplePropertyTemplate simplePropertyTemplate = template as IfcSimplePropertyTemplate;
+				if (simplePropertyTemplate != null)
+				{
+					if (simplePropertyTemplate.TemplateType == null)
+						changes.Add("  XXX " + template.Name + " has no nominated quantity template type!");
+					else
+					{
+						DocPropertyTemplateTypeEnum templateType = DocPropertyTemplateTypeEnum.P_SINGLEVALUE;
+						if (Enum.TryParse<DocPropertyTemplateTypeEnum>(simplePropertyTemplate.TemplateType.ToString(), out templateType))
+							property.PropertyType = templateType;
+						else
+							changes.Add("  XXX " + template.Name + " has invalid property template type!");
+					}
+					if (simplePropertyTemplate.AccessState != null)
+					{
+						DocStateEnum state = DocStateEnum.READWRITE;
+						if (Enum.TryParse<DocStateEnum>(simplePropertyTemplate.AccessState.ToString(), out state))
+							property.AccessState = state;
+						else
+							changes.Add("  XXX " + template.Name + " has invalid Access State!");
+					}
+
+
+					if (!string.IsNullOrEmpty(simplePropertyTemplate.PrimaryMeasureType))
+						property.PrimaryDataType = simplePropertyTemplate.PrimaryMeasureType;
+					if (!string.IsNullOrEmpty(simplePropertyTemplate.SecondaryMeasureType))
+						property.SecondaryDataType = simplePropertyTemplate.SecondaryMeasureType;
+
+					IfcPropertyEnumeration enumeration = simplePropertyTemplate.Enumerators;
+					if (enumeration != null)
+					{
+						DocPropertyEnumeration propertyEnumeration = null;
+						if (propertyEnumerations.TryGetValue(propertyEnumeration.Name, out propertyEnumeration))
+							property.Enumeration = propertyEnumeration;
+						else
+						{
+							propertyEnumeration = m_Project.PropertyEnumerations.Where(x => string.Compare(x.Name, enumeration.Name, true) == 0).FirstOrDefault();
+							if (propertyEnumeration == null)
+							{
+								changes.Add("    NEW PropertyEnumeration " + enumeration.Name);
+								propertyEnumeration = new DocPropertyEnumeration() { Name = enumeration.Name };
+								m_Project.PropertyEnumerations.Add(propertyEnumeration);
+							}
+							else
+								changes.Add("    EXISTING PropertyEnumeration " + enumeration.Name);
+							propertyEnumerations[propertyEnumeration.Name] = propertyEnumeration;
+							foreach (IfcValue value in enumeration.EnumerationValues)
+							{
+								string valueString = value.ToString();
+								DocPropertyConstant constant = propertyEnumeration.Constants.Where(x => string.Compare(x.Name, valueString) == 0).FirstOrDefault();
+								if (constant == null)
+								{
+									constant = new DocPropertyConstant() { Name = valueString };
+									changes.Add("      NEW PropertyConstant " + constant.Name + "ADDED");
+									m_Project.PropertyConstants.Add(constant);
+									propertyEnumeration.Constants.Add(constant);
+								}
+								else
+									changes.Add("      EXISTING PropertyConstant " + constant.Name);
+								//Improve to force UNSET, NOTDEFINED etc to end
+							}
+						}
+					}
+				}
+				else
+				{
+					IfcComplexPropertyTemplate complexPropertyTemplate = template as IfcComplexPropertyTemplate;
+					if (complexPropertyTemplate != null)
+					{
+						property.PropertyType = DocPropertyTemplateTypeEnum.COMPLEX;
+						foreach (IfcPropertyTemplate propertyTemplate in complexPropertyTemplate.HasPropertyTemplates)
+						{
+							DocProperty nestedProperty = createOrFindPropertyTemplate(propertyTemplate, null, ref changes);
+
+							DocProperty existingProperty = property.Elements.Where(x => string.Compare(x.UniqueId, nestedProperty.UniqueId, true) == 0).FirstOrDefault();
+							if(existingProperty != null)
+								changes.Add("      EXISTING Property " + nestedProperty.Name);
+							else
+							{
+								changes.Add("      SET Property " + nestedProperty.Name);
+								property.Elements.Add(nestedProperty);
+							}
+						}
+					}
+				}
+			}
+		}
 		internal static void ImportIFC(string filePath, DocProject project, DocSchema schema)
 		{
+			if(schema == null)
+			{
+				System.Windows.Forms.MessageBox.Show("Schema wasn't nominated, import aborted!", "No Schema", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+				return;
+			}
 			IfcContext context = null;
 			if (System.IO.Path.GetExtension(filePath) == ".ifcxml")
 			{
@@ -1069,133 +1304,98 @@ namespace IfcDoc
 					context = xmlSerializer.ReadObject(streamSource) as IfcContext;
 				}
 			}
-			if (context != null)
+			else
 			{
-				Dictionary<string, DocProperty> propertyTemplates = new Dictionary<string, DocProperty>();
-				Dictionary<string, DocQuantity> quantityTemplates = new Dictionary<string, DocQuantity>();
-				Dictionary<string, IfcPropertyEnumeration> propertyEnumerations = new Dictionary<string, IfcPropertyEnumeration>();
-				Dictionary<string, IfcPropertySetTemplate> propertySetTemplates = new Dictionary<string, IfcPropertySetTemplate>();
-
-				foreach (IfcDefinitionSelect definition in context.Declares.SelectMany(x => x.RelatedDefinitions))
+				BuildingSmart.Serialization.Step.StepSerializer stepSerializer = new BuildingSmart.Serialization.Step.StepSerializer(typeof(IfcContext));
+				using (System.IO.FileStream streamSource = new System.IO.FileStream(filePath, System.IO.FileMode.Open))
 				{
-					DocProperty docProperty = null;
-					IfcPropertySetTemplate propertySetTemplate = definition as IfcPropertySetTemplate;
-					if (propertySetTemplate != null)
+					context = stepSerializer.ReadObject(streamSource) as IfcContext;
+				}
+			}
+			if (context == null)
+			{
+				System.Windows.Forms.MessageBox.Show("No valid IfcContext found, import aborted!", "No Context", System.Windows.Forms.MessageBoxButtons.OK, System.Windows.Forms.MessageBoxIcon.Error);
+				return;
+			}
+		
+			List<string> changes = new List<string>();
+			ImportAggregate aggregate = new ImportAggregate(project);
+			foreach (IfcDefinitionSelect definition in context.Declares.SelectMany(x => x.RelatedDefinitions))
+			{
+				DocSchema existingSchema = null;
+				IfcPropertySetTemplate propertySetTemplate = definition as IfcPropertySetTemplate;
+				if (propertySetTemplate != null)
+				{
+					changes.Add("\r\n");
+					if (propertySetTemplate.TemplateType.ToString().ToUpper().StartsWith("QTO"))
 					{
-						if (propertySetTemplate.TemplateType.ToString().ToUpper().StartsWith("QTO"))
+						DocQuantitySet quantitySet = project.FindQuantitySet(propertySetTemplate.Name, out existingSchema);
+						if (quantitySet == null)
 						{
-							DocQuantitySet quantitySet = new DocQuantitySet();
+							quantitySet = new DocQuantitySet();
 							SetObject(quantitySet, propertySetTemplate);
-							foreach (IfcPropertyTemplate template in propertySetTemplate.HasPropertyTemplates)
-							{
-								DocQuantity quantity = convert(template, project) as DocQuantity;
-								quantitySet.Quantities.Add(quantity);
-							}
+							changes.Add("NEW QuantitySet " + propertySetTemplate.Name);
 							schema.QuantitySets.Add(quantitySet);
 						}
 						else
 						{
-							DocPropertySet propertySet = new DocPropertySet();
-							SetObject(propertySet, propertySetTemplate);
-							foreach (IfcPropertyTemplate template in propertySetTemplate.HasPropertyTemplates)
+							if (string.Compare(existingSchema.Name, schema.Name) != 0)
+								changes.Add("DIFFERING SCHEMA " + propertySetTemplate.Name + " located in " + existingSchema.Name);
+							changes.Add("EXISTING QuantitySet " + propertySetTemplate.Name);
+							if(!string.IsNullOrEmpty(propertySetTemplate.Description) && string.Compare(propertySetTemplate.Description, quantitySet.Documentation) != 0)
 							{
-								DocProperty property = convert(template, project) as DocProperty;
-								propertySet.Properties.Add(property);
+								quantitySet.Documentation = propertySetTemplate.Description;
+								changes.Add(propertySetTemplate.Name + " revised documentation : \r\n < " + propertySetTemplate.Description + "\r\n> " + quantitySet.Documentation);
 							}
-
-							schema.PropertySets.Add(propertySet);
 						}
+						foreach (IfcPropertyTemplate template in propertySetTemplate.HasPropertyTemplates)
+							aggregate.createOrFindQuantityTemplate(template, quantitySet, ref changes);
 					}
 					else
-					{ 
-						IfcPropertyTemplate propertyTemplate = definition as IfcPropertyTemplate;
-						if (propertyTemplate != null)
+					{
+						DocPropertySet propertySet = project.FindPropertySet(propertySetTemplate.Name, out existingSchema);
+						if (propertySet == null)
 						{
-							if (propertyTemplates.TryGetValue(propertyTemplate.GlobalId, out docProperty))
-								convert(propertyTemplate, project);
+							propertySet = new DocPropertySet();
+							SetObject(propertySet, propertySetTemplate);
+							changes.Add("NEW PropertySet " + propertySetTemplate.Name);
+							schema.PropertySets.Add(propertySet);
 						}
 						else
 						{
-							IfcComplexPropertyTemplate complexPropertyTemplate = definition as IfcComplexPropertyTemplate;
-							//if (complexPropertyTemplate != null)
-							//	complexProperties[complexPropertyTemplate.GlobalId] = complexPropertyTemplate;
-							//else
-							//{
-							//	IfcPropertySetTemplate propertySetTemplate = definition as IfcPropertySetTemplate;
-							//	if (propertySetTemplate != null)
-							//		propertySetTemplates[propertySetTemplate.GlobalId] = propertySetTemplate;
-							//}
+							if (string.Compare(existingSchema.Name, schema.Name) != 0)
+								changes.Add("DIFFERING SCHEMA " + propertySetTemplate.Name + " located in " + existingSchema.Name);
+							changes.Add("EXISTING PropertySet " + propertySetTemplate.Name);
+							if (!string.IsNullOrEmpty(propertySetTemplate.Description) && string.Compare(propertySetTemplate.Description, propertySet.Documentation) != 0)
+							{
+								propertySet.Documentation = propertySetTemplate.Description;
+								changes.Add(propertySetTemplate.Name + " revised documentation : \r\n < " + propertySetTemplate.Description + "\r\n> " + propertySet.Documentation);
+							}
 						}
+						foreach (IfcPropertyTemplate template in propertySetTemplate.HasPropertyTemplates)
+							aggregate.createOrFindPropertyTemplate(template, propertySet, ref changes);
 					}
 				}
-			}
-		}
-		internal static DocObject convert(IfcPropertyTemplate template, DocProject project)
-		{
-			DocProperty property = new DocProperty();
-			DocQuantity quantity = new DocQuantity();
-			IfcSimplePropertyTemplate simplePropertyTemplate = template as IfcSimplePropertyTemplate;
-			if(simplePropertyTemplate != null)
-			{
-				switch (simplePropertyTemplate.TemplateType)
-				{
-					case IfcSimplePropertyTemplateTypeEnum.Q_AREA:
-					case IfcSimplePropertyTemplateTypeEnum.Q_COUNT:
-					case IfcSimplePropertyTemplateTypeEnum.Q_LENGTH:
-					case IfcSimplePropertyTemplateTypeEnum.Q_TIME:
-					case IfcSimplePropertyTemplateTypeEnum.Q_VOLUME:
-					case IfcSimplePropertyTemplateTypeEnum.Q_WEIGHT:
-						quantity.QuantityType = (DocQuantityTemplateTypeEnum)Enum.Parse(typeof(DocQuantityTemplateTypeEnum), simplePropertyTemplate.TemplateType.ToString());
-						if(simplePropertyTemplate.AccessState != null)
-							quantity.AccessState = (DocStateEnum)Enum.Parse(typeof(DocStateEnum), simplePropertyTemplate.AccessState.ToString());
-						property = null;
-						break;
-					default:
-						property.PropertyType = (DocPropertyTemplateTypeEnum)Enum.Parse(typeof(DocPropertyTemplateTypeEnum), simplePropertyTemplate.TemplateType.ToString());
-						if(simplePropertyTemplate.AccessState != null)
-							property.AccessState = (DocStateEnum)Enum.Parse(typeof(DocStateEnum), simplePropertyTemplate.AccessState.ToString());
-						break;
-
-				}
-
-				if(property == null)
-				{
-					SetObject(quantity, simplePropertyTemplate);
-					project.Quantities.Add(quantity);
-					return quantity;
-				}
-				SetObject(property, simplePropertyTemplate);
-				if(!string.IsNullOrEmpty(simplePropertyTemplate.PrimaryMeasureType))
-					property.PrimaryDataType = simplePropertyTemplate.PrimaryMeasureType;
-				if (!string.IsNullOrEmpty(simplePropertyTemplate.SecondaryMeasureType))
-					property.SecondaryDataType = simplePropertyTemplate.SecondaryMeasureType;
-
-				IfcPropertyEnumeration enumeration = simplePropertyTemplate.Enumerators;
-				if (enumeration != null)
-				{
-					DocPropertyEnumeration propertyEnumeration = new DocPropertyEnumeration();
-					propertyEnumeration.Name = enumeration.Name;
-					foreach (IfcValue value in enumeration.EnumerationValues)
+				else
+				{ 
+					IfcPropertyTemplate propertyTemplate = definition as IfcPropertyTemplate;
+					if (propertyTemplate != null)
 					{
-						propertyEnumeration.Constants.Add(new DocPropertyConstant() { Name = value.ToString() });
+						IfcSimplePropertyTemplate simplePropertyTemplate = propertyTemplate as IfcSimplePropertyTemplate;
+						if (simplePropertyTemplate != null && simplePropertyTemplate.TemplateType != null && simplePropertyTemplate.TemplateType.ToString().ToUpper()[0] == 'Q')
+							aggregate.createOrFindQuantityTemplate(propertyTemplate, null, ref changes);
+						else
+							aggregate.createOrFindPropertyTemplate(propertyTemplate, null, ref changes);
 					}
 				}
-				project.Properties.Add(property);
+			}
 
-				return property;
-			}
-			IfcComplexPropertyTemplate complexPropertyTemplate = template as IfcComplexPropertyTemplate;
-			if(complexPropertyTemplate != null)
-			{
-				property.PropertyType = DocPropertyTemplateTypeEnum.COMPLEX; 
-				foreach(IfcPropertyTemplate propertyTemplate in complexPropertyTemplate.HasPropertyTemplates)
-				{
-					property.Elements.Add(convert(propertyTemplate, project) as DocProperty);
-				}
-				project.Properties.Add(property);
-			}
-			return null;
+			string pathLog = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(filePath), System.IO.Path.GetFileNameWithoutExtension(filePath)+ ".txt");
+			System.IO.File.WriteAllText(pathLog, string.Join("\r\n", changes));
+			System.Diagnostics.Process.Start(pathLog);
 		}
+
+		
 		internal static void ExportIfc(IfcProjectLibrary ifcProjectLibrary, DocProject docProject, Dictionary<DocObject, bool> included)
 		{
 			//List<IfcDefinitionSelect> propertyEnumerations = new List<IfcDefinitionSelect>();  IfcPropertyEnumeration doesn't inherit from IfcDefinitionSelect
@@ -1783,7 +1983,7 @@ namespace IfcDoc
 
 			foreach (PropertyDef subdef in psd.PropertyDefs)
 			{
-				DocProperty docprop = pset.RegisterProperty(subdef.Name);
+				DocProperty docprop = pset.RegisterProperty(subdef.Name, docProject);
 				Program.ImportPsdPropertyTemplate(subdef, docprop, docProject, docSchema);
 			}
 
