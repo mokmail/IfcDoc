@@ -286,6 +286,9 @@ namespace IfcDoc
 						}
 					}
 				}
+				DocModelRuleEntity modelRuleEntity = o as DocModelRuleEntity;
+				if (modelRuleEntity != null && string.IsNullOrEmpty(modelRuleEntity.UniqueId))
+					modelRuleEntity.UniqueId = Guid.NewGuid().ToString();
 			}
 
 			if (project == null)
