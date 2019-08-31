@@ -452,9 +452,7 @@ namespace IfcDoc
 										// use hashed guid
 										if (qset.Uuid == Guid.Empty)
 										{
-											System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();
-											byte[] hash = md5.ComputeHash(Encoding.Default.GetBytes(qset.Name));
-											qset.Uuid = new Guid(hash);
+											qset.Uuid = BuildingSmart.Utilities.Conversion.GlobalId.HashGuid(qset.Name);
 										}
 
 										// everything is currently named "Base Quantities"; get name from file instead; e.g. "Qto_Beam"
@@ -9791,7 +9789,7 @@ namespace IfcDoc
 			DialogResult res = folderBrowserDialog.ShowDialog();
 			if (res != System.Windows.Forms.DialogResult.OK)
 				return;
-
+			Properties.Settings.Default.InputPathGeneral = Path.Combine( folderBrowserDialog.SelectedPath, "figures");
 			this.SetCurrentFile(null);
 
 			this.m_mapTree.Clear();
@@ -9826,6 +9824,7 @@ namespace IfcDoc
 			DialogResult res = folderBrowserDialog.ShowDialog();
 			if (res != System.Windows.Forms.DialogResult.OK)
 				return;
+			Properties.Settings.Default.InputPathGeneral = Path.Combine( folderBrowserDialog.SelectedPath, "figures");
 			XmlFolderSerializer folderSerializer = new XmlFolderSerializer(typeof(DocProject));
 			folderSerializer.AddFilePrefix(typeof(DocDefinition), "Ifc");
 			folderSerializer.AddFilePrefix(typeof(DocPropertyEnumeration), "PEnum_");

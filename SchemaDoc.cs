@@ -24,6 +24,8 @@ using System.Text.RegularExpressions;
 using BuildingSmart.Utilities.Conversion;
 using BuildingSmart.Serialization;
 
+using HtmlAgilityPack;
+
 namespace IfcDoc.Schema.DOC
 {
 	public static class SchemaDOC
@@ -63,6 +65,7 @@ namespace IfcDoc.Schema.DOC
 		}
 
 		string DocumentationHtml();
+		string DocumentationHtmlNoParagraphs();
 	}
 
 	/// <summary>
@@ -117,9 +120,20 @@ namespace IfcDoc.Schema.DOC
 			return null;
 		}
 
+
+		public string DocumentationHtmlNoParagraphs()
+		{
+			HtmlNode node = Format.HTM.FormatHTM.MarkdownToHtml(Documentation, true);
+			if (node == null)
+				return "";
+			return node.OuterHtml;
+		}
 		public string DocumentationHtml()
 		{
-			return Format.HTM.FormatHTM.MarkdownToHtml(Documentation);
+			HtmlNode node = Format.HTM.FormatHTM.MarkdownToHtml(Documentation, false);
+			if (node == null)
+				return "";
+			return node.OuterHtml;
 		}
 	}
 
@@ -314,6 +328,7 @@ namespace IfcDoc.Schema.DOC
 
 		// GlobalId reduces chances of long path
 		protected virtual string xmlid() { return (string.IsNullOrEmpty(Name) ? "" : Name + "_") + GlobalId.Format(Uuid); }
+		
 		/*
         [Category("Misc")]
         public string Status
@@ -373,9 +388,19 @@ namespace IfcDoc.Schema.DOC
 			}
 
 		}
+		public string DocumentationHtmlNoParagraphs()
+		{
+			HtmlNode node = Format.HTM.FormatHTM.MarkdownToHtml(Documentation, true);
+			if (node == null)
+				return "";
+			return node.OuterHtml;
+		}
 		public string DocumentationHtml()
 		{
-			return Format.HTM.FormatHTM.MarkdownToHtml(Documentation);
+			HtmlNode node = Format.HTM.FormatHTM.MarkdownToHtml(Documentation, false);
+			if (node == null)
+				return "";
+			return node.OuterHtml;
 		}
 	}
 
@@ -631,7 +656,7 @@ namespace IfcDoc.Schema.DOC
 		[DataMember(Order = 8)] [XmlArray(Order = 13)] public List<DocTerm> Terms { get; protected set; } // new in 4.3
 		[DataMember(Order = 9)] [XmlArray(Order = 14)] public List<DocAbbreviation> Abbreviations { get; protected set; } // new in 4.3
 		[DataMember(Order = 10)] [XmlArray(Order = 15)] public List<DocAnnotation> Annotations { get; protected set; } // new in 8.7: Cover | Foreword | Introduction; Deprecated in 9.6
-		[DataMember(Order = 11)] [XmlArray(Order = 16)] public List<DocPublication> Publications { get; protected set; } // new in 9.6
+		[DataMember(Order = 11)] [XmlArray(Order = 16)] [XmlArrayItem(NestingLevel = 1)] public List<DocPublication> Publications { get; protected set; } // new in 9.6
 		[DataMember(Order = 12)] [XmlArray(Order = 0)] [XmlArrayItem(NestingLevel = 2)] public List<DocConstant> Constants { get; protected set; } // 12.1 
 		[DataMember(Order = 13)] [XmlArray(Order = 1)] [XmlArrayItem(NestingLevel = 2)] public List<DocPropertyConstant> PropertyConstants { get; protected set; } // 12.1 
 		[DataMember(Order = 14)] [XmlArray(Order = 2)] [XmlArrayItem(NestingLevel = 2)] public List<DocPropertyEnumeration> PropertyEnumerations { get; protected set; } // 12.1

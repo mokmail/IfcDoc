@@ -677,7 +677,7 @@ namespace BuildingSmart.Serialization.Xml
 		private void writeRootObject(Stream stream, object root, HashSet<string> propertiesToIgnore, bool isIdPass, ref int nextID)
 		{
 			int indent = 0;
-			StreamWriter writer = new StreamWriter(stream);
+			StreamWriter writer = new StreamWriter(stream, Encoding.UTF8);
 
 			this.WriteHeader(writer);
 
