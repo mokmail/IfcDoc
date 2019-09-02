@@ -1647,14 +1647,6 @@ namespace IfcDoc.Format.HTM
 			if (content == null)
 				return;
 
-			// strip off "<EPM-HTML>" and "</EPM-HTML>"
-			int iHead = content.IndexOf("<EPM-HTML>", StringComparison.OrdinalIgnoreCase);
-			int iTail = content.LastIndexOf("</EPM-HTML>", StringComparison.OrdinalIgnoreCase);
-			if (iHead >= 0 && iTail >= 0)
-			{
-				content = content.Substring(iHead + 10, iTail - iHead - 11);
-			}
-
 			// strip off "Definition from IAI"
 
 			content = content.Replace("<u>Definition from IAI</u>:", "");

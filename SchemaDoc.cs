@@ -120,6 +120,15 @@ namespace IfcDoc.Schema.DOC
 			return null;
 		}
 
+		public DocLocalization() { }
+		public DocLocalization(DocLocalization localization)
+		{
+			Locale = localization.Locale;
+			Category = localization.Category;
+			Name = localization.Name;
+			Documentation = localization.Documentation;
+			URL = localization.URL;
+		}
 
 		public string DocumentationHtmlNoParagraphs()
 		{
@@ -310,7 +319,17 @@ namespace IfcDoc.Schema.DOC
 
 			return docLocal;
 		}
-
+		public void RegisterLocalization(DocLocalization localization)
+		{
+			for(int lcounter = this.Localization.Count-1; lcounter >= 0; lcounter--)
+			{
+				DocLocalization existing = this.Localization[lcounter];
+				if (existing.Locale != null && existing.Locale.Equals(localization.Locale, StringComparison.OrdinalIgnoreCase))
+					this.Localization.RemoveAt(lcounter);
+			}
+			this.Localization.Add(localization);
+			this.Localization.Sort();
+		}
 
 		[Category("Misc")]
 		public Guid Uuid

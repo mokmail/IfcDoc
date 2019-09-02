@@ -104,11 +104,10 @@ namespace BuildingSmart.Serialization.Xml
 
 			Queue<QueueData> queue = new Queue<QueueData>();
 
-			int nextID = 0;
-			writeFirstPassForIds(root, new HashSet<string>(), ref nextID);
-			WriteNestedObject(new QueueData(Path.Combine(folderPath, removeInvalidFile(root.GetType().Name)+".xml"), root), queue, ref nextID);
+			writeFirstPassForIds(root, new HashSet<string>());
+			WriteNestedObject(new QueueData(Path.Combine(folderPath, removeInvalidFile(root.GetType().Name)+".xml"), root), queue);
 			while (queue.Count > 0)
-				WriteNestedObject(queue.Dequeue(), queue, ref nextID);
+				WriteNestedObject(queue.Dequeue(), queue);
 		}
 
 		private string removeInvalidFile(string str)
@@ -119,10 +118,10 @@ namespace BuildingSmart.Serialization.Xml
 
 			return result;
 		}
-		private void WriteNestedObject(QueueData dataObject, Queue<QueueData> queue, ref int nextID)
+		private void WriteNestedObject(QueueData dataObject, Queue<QueueData> queue)
 		{
 			object obj = dataObject.PayLoad;
-
+			_ObjectStore.UnMarkSerialized(obj);
 			Type objectType = obj.GetType(), stringType = typeof(String);
 
 			string folderPath = Path.GetDirectoryName(dataObject.FilePath);
@@ -156,7 +155,7 @@ namespace BuildingSmart.Serialization.Xml
 									if (nested == null)
 										continue;
 									count++;
-									if (string.IsNullOrEmpty(_ObjectStore.EncounteredId(nested)))
+									if (!_ObjectStore.isSerialized(nested))
 										allSaved = false;
 									object objId = uniqueIdProperty.GetValue(nested);
 									if (objId == null || string.IsNullOrEmpty(objId.ToString()))
@@ -187,7 +186,7 @@ namespace BuildingSmart.Serialization.Xml
 											Directory.CreateDirectory(alphaPath);
 											foreach (object nested in group)
 											{
-												_ObjectStore.MarkEncountered(nested, ref nextID);
+												_ObjectStore.MarkSerialized(nested);
 												string nestedObjectPath = Path.Combine(alphaPath, removeInvalidFile(uniqueIdProperty.GetValue(nested).ToString()));
 												Directory.CreateDirectory(nestedObjectPath);
 												queue.Enqueue(new QueueData(Path.Combine(nestedObjectPath, removeInvalidFile(nested.GetType().Name) + ".xml"), nested));
@@ -199,7 +198,7 @@ namespace BuildingSmart.Serialization.Xml
 									{
 										if (nested == null)
 											continue;
-										_ObjectStore.MarkEncountered(nested, ref nextID);
+										_ObjectStore.MarkSerialized(nested);
 										string nestedObjectPath = Path.Combine(nestedPath, removeInvalidFile(uniqueIdProperty.GetValue(nested).ToString()));
 										Directory.CreateDirectory(nestedObjectPath);
 										queue.Enqueue(new QueueData(Path.Combine(nestedObjectPath, removeInvalidFile(propertyInfo.Name) + ".xml"), nested));
@@ -262,10 +261,10 @@ namespace BuildingSmart.Serialization.Xml
 			}
 			if (nestedProperties.Count < fields.Count)
 			{
-				_ObjectStore.RemoveEncountered(obj);
+				_ObjectStore.UnMarkSerialized(obj);
 				using (FileStream fileStream = new FileStream(dataObject.FilePath, FileMode.Create, FileAccess.Write))
 				{
-					writeObject(fileStream, obj, nestedProperties, ref nextID);
+					writeObject(fileStream, obj, nestedProperties);
 				}
 			}
 		}

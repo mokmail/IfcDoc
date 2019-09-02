@@ -151,7 +151,8 @@ namespace IfcDoc
 						Dictionary<string, object> dictionaryInstances = null;
 						XmlSerializer formatDoc = new XmlSerializer(typeof(DocProject));
 						project = (DocProject)formatDoc.ReadObject(streamDoc, out dictionaryInstances);
-						instances.AddRange(dictionaryInstances.Values);
+						if(project != null)
+						instances.AddRange(formatDoc.ExtractObjects(project, typeof(SEntity)));
 					}
 					break;
 				default:
@@ -307,6 +308,14 @@ namespace IfcDoc
 					foreach (IDocumentation obj in instances.OfType<IDocumentation>().Where(x=> !string.IsNullOrEmpty(x.Documentation)))
 					{
 						obj.Documentation = convertToMarkdown(obj.Documentation);
+						DocObject docObject = obj as DocObject;
+						if (docObject != null && docObject.Localization.Count > 0)
+						{	
+							List<DocLocalization> localizations = docObject.Localization.ToList();
+							docObject.Localization.Clear();
+							foreach(DocLocalization localization in localizations)
+								docObject.RegisterLocalization(new DocLocalization(localization));
+						}
 					}
 				}
 			}
@@ -376,17 +385,20 @@ namespace IfcDoc
 		}
 		private static void extractListingsV12_1(DocProject project, DocSchema schema, Dictionary<string, DocPropertyEnumeration> encounteredPropertyEnumerations)
 		{
-			foreach(DocPropertyEnumeration enumeration in schema.PropertyEnumerations)
+			if (schema.PropertyEnumerations != null)
 			{
-				if (encounteredPropertyEnumerations.ContainsKey(enumeration.Name))
-					continue;
-				project.PropertyEnumerations.Add(enumeration);
-				encounteredPropertyEnumerations[enumeration.Name] = enumeration;
-				foreach(DocPropertyConstant constant in enumeration.Constants)
+				foreach (DocPropertyEnumeration enumeration in schema.PropertyEnumerations)
 				{
-					constant.Name = constant.Name.Trim();
-					if (!project.PropertyConstants.Contains(constant))
-						project.PropertyConstants.Add(constant);
+					if (encounteredPropertyEnumerations.ContainsKey(enumeration.Name))
+						continue;
+					project.PropertyEnumerations.Add(enumeration);
+					encounteredPropertyEnumerations[enumeration.Name] = enumeration;
+					foreach (DocPropertyConstant constant in enumeration.Constants)
+					{
+						constant.Name = constant.Name.Trim();
+						if (!project.PropertyConstants.Contains(constant))
+							project.PropertyConstants.Add(constant);
+					}
 				}
 			}
 			foreach (DocType t in schema.Types)
@@ -502,7 +514,11 @@ namespace IfcDoc
 			HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
 			doc.LoadHtml(documentation);
 			HtmlNode node = doc.DocumentNode;
-			return convertToMarkdown(node, new ConvertMarkdownOptions());
+			string result = convertToMarkdown(node, new ConvertMarkdownOptions()).Trim();
+
+			if(result.EndsWith("___"))
+				result = result.Substring(0, result.Length - 3).TrimEnd();
+			return result;
 		}
 		private static string convertToMarkdown(HtmlNode node, ConvertMarkdownOptions options)
 		{
@@ -513,7 +529,7 @@ namespace IfcDoc
 				if (options.m_CollapseLines && !options.m_NestsCode)
 				{
 					Regex regex = new Regex("[ ]{2,}", RegexOptions.None);
-					text = regex.Replace(Regex.Replace(text, @"\n|\r", " "), " ");
+					text = regex.Replace(Regex.Replace(text, @"\n|\r|\t", " "), " ");
 				}
 				string escaped = "";
 				foreach (char c in text)

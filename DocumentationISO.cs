@@ -4179,9 +4179,6 @@ namespace IfcDoc
 				}
 			}
 
-			sb = sb.Replace("<EPM-HTML>", "");
-			sb = sb.Replace("</EPM-HTML>", "");
-
 			return sb.ToString();
 		}
 
