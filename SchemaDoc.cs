@@ -157,6 +157,7 @@ namespace IfcDoc.Schema.DOC
 		public object Tag; // for holding UI state, e.g. tree node
 
 		[IgnoreDataMember] public string id { get { return xmlid(); } }
+		[IgnoreDataMember] public string _folderName { get { return folderName(); } }
 		// v1.8: inserted fields Code, Version, Status, Author, Owner, Copyright to support MVD-XML
 
 		protected DocObject()
@@ -307,6 +308,7 @@ namespace IfcDoc.Schema.DOC
 
 		// GlobalId reduces chances of long path
 		protected virtual string xmlid() { return (string.IsNullOrEmpty(Name) ? "" : Name + "_") + GlobalId.Format(Uuid); }
+		protected virtual string folderName() { return (string.IsNullOrEmpty(Name) ? GlobalId.Format(Uuid) : Name);  }
 		/*
         [Category("Misc")]
         public string Status
@@ -2139,6 +2141,10 @@ namespace IfcDoc.Schema.DOC
 			SortAnnexes();
 			DocObject.ComparerDocObject comparer = new DocObject.ComparerDocObject();
 			Templates.Sort(comparer);
+			foreach(DocTemplateDefinition template in Templates)
+			{
+				template.SortTemplate();
+			}
 			ModelViews.Sort(comparer);
 			foreach(DocModelView mv in ModelViews)
 			{
@@ -2558,7 +2564,7 @@ namespace IfcDoc.Schema.DOC
 		[DataMember(Order = 7), Obsolete] private string _FieldType3 { get; set; } // type of custom field #3, e.g. "IfcDistributionSystemTypeEnum"
 		[DataMember(Order = 8), Obsolete] private string _FieldType4 { get; set; } // type of custom field #4, e.g. "IfcFlowDirectionEnum"        
 		[DataMember(Order = 9)] [XmlArray] public List<DocModelRule> Rules { get; protected set; } //NEW IN 2.5
-		[DataMember(Order = 10)] [XmlArray] public List<DocTemplateDefinition> Templates { get; protected set; } // NEW IN 2.7 sub-templates
+		[DataMember(Order = 10)] [XmlArray] [XmlArrayItem(NestingLevel = 1)] public List<DocTemplateDefinition> Templates { get; protected set; } // NEW IN 2.7 sub-templates
 		[DataMember(Order = 11)] [XmlAttribute] public bool IsDisabled { get; set; }
 
 		private bool? _validation; // unserialized; null: no applicable instances; false: one or more failures; true: all pass
@@ -2866,7 +2872,13 @@ namespace IfcDoc.Schema.DOC
 				docSub.Rename(docSchema, docDefinition, docAttribute, newname);
 			}
 		}
-
+		public void SortTemplate()
+		{
+			DocObject.ComparerDocObject comparer = new DocObject.ComparerDocObject();
+			Templates.Sort(comparer);
+			foreach (DocTemplateDefinition t in Templates)
+				t.SortTemplate();
+		}
 	}
 
 	// this is kept as single structure (rather than on ConceptRoot) such that all formatting info can be easily accessed in one place, and not comingle usage of concepts
@@ -2900,7 +2912,7 @@ namespace IfcDoc.Schema.DOC
 	public class DocModelView : DocObject
 	{
 		[DataMember(Order = 0)] [XmlArray] public List<DocExchangeDefinition> Exchanges { get; protected set; }
-		[DataMember(Order = 1)] [XmlArray] [XmlArrayItem(NestingLevel = 1)] public List<DocConceptRoot> ConceptRoots { get; protected set; } // new in 3.5
+		[DataMember(Order = 1)] [XmlArray] public List<DocConceptRoot> ConceptRoots { get; protected set; } // new in 3.5
 		[DataMember(Order = 2)] [XmlAttribute] public string BaseView { get; set; } // new in 3.9
 		[DataMember(Order = 3)] [XmlAttribute] public string XsdUri { get; set; } // new in 5.4
 		[DataMember(Order = 4)] [XmlArray] public List<DocXsdFormat> XsdFormats { get; protected set; } // new in 5.7
@@ -6609,7 +6621,7 @@ namespace IfcDoc.Schema.DOC
 	/// </summary>
 	public class DocPrimitive : DocDefinition // 5.8
 	{
-		//protected override string xmlid() { return Name; } 
+		protected override string folderName() { return xmlid(); }
 	}
 
 	/// <summary>
@@ -7135,6 +7147,7 @@ namespace IfcDoc.Schema.DOC
 	public class DocConstant : DocObject
 	{
 		[IgnoreDataMember] [XmlIgnore] [InverseProperty("Constants")] public HashSet<DocEnumeration> PartOfEnumeration { get; protected set; } = new HashSet<DocEnumeration>();
+		protected override string folderName() { return xmlid(); }
 	}
 
 	public abstract class DocConstraint : DocObject
@@ -7461,7 +7474,8 @@ namespace IfcDoc.Schema.DOC
 
 			return docAttr;
 		}
-		protected override string xmlid() { return (PropertyType == DocPropertyTemplateTypeEnum.COMPLEX ? "zz" : "") + base.xmlid(); } 
+		protected override string xmlid() { return (PropertyType == DocPropertyTemplateTypeEnum.COMPLEX ? "zz" : "") + base.xmlid(); }
+		protected override string folderName() { return xmlid(); }
 
 		internal DocChangeAction DetectChanges(DocProperty baseProperty)
 		{
@@ -7541,13 +7555,14 @@ namespace IfcDoc.Schema.DOC
 
 			return docEnum;
 		}
+		protected override string xmlid() { return Name; }
 	}
 
 	// new in IFCDOC 5.8
 	public class DocPropertyConstant : DocObject
 	{
 		[IgnoreDataMember] [XmlIgnore] [InverseProperty("Constants")] public HashSet<DocPropertyEnumeration> PartOfEnumeration { get; protected set; } = new HashSet<DocPropertyEnumeration>();
-
+		protected override string folderName() { return xmlid(); }
 	}
 
 	/// <summary>
@@ -7682,6 +7697,7 @@ namespace IfcDoc.Schema.DOC
 
 			return docAttr;
 		}
+		protected override string folderName() { return xmlid(); }
 	}
 
 	public enum DocQuantityTemplateTypeEnum
