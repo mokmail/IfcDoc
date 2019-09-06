@@ -1042,8 +1042,10 @@ namespace IfcDoc
 		internal static void SetObject(DocObject obj, IfcRoot root)
 		{
 			Guid guid = GlobalId.Parse(root.GlobalId);
-			if(guid != Guid.Empty)
+			if (guid != Guid.Empty)
 				obj.UniqueId = guid.ToString();
+			else if (obj is DocPropertySet || obj is DocQuantitySet)
+				obj.Uuid = GlobalId.HashGuid(root.Name);
 			obj.Name = root.Name;
 		 	obj.Documentation = root.Description;
 
@@ -1101,6 +1103,8 @@ namespace IfcDoc
 							result = new DocQuantity() { Name = template.Name, UniqueId = id, Documentation = template.Description };
 							m_Project.Quantities.Add(result);
 						}
+						else
+							result = existing;
 					}
 					else
 					{
@@ -1175,6 +1179,8 @@ namespace IfcDoc
 							result = new DocProperty() { Name = template.Name, UniqueId = id, Documentation = template.Description };
 							m_Project.Properties.Add(result);
 						}
+						else
+							result = existing;
 					}
 					else
 					{
@@ -1205,7 +1211,7 @@ namespace IfcDoc
 				if (simplePropertyTemplate != null)
 				{
 					if (simplePropertyTemplate.TemplateType == null)
-						changes.Add("  XXX " + template.Name + " has no nominated quantity template type!");
+						changes.Add("  XXX " + template.Name + " has no nominated property template type!");
 					else
 					{
 						DocPropertyTemplateTypeEnum templateType = DocPropertyTemplateTypeEnum.P_SINGLEVALUE;
@@ -1943,9 +1949,7 @@ namespace IfcDoc
 			// use hashed guid
 			if (pset.Uuid == Guid.Empty)
 			{
-				System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create();
-				byte[] hash = md5.ComputeHash(Encoding.Default.GetBytes(pset.Name));
-				pset.Uuid = new Guid(hash);
+				pset.Uuid = BuildingSmart.Utilities.Conversion.GlobalId.HashGuid(pset.Name);
 			}
 
 			pset.Name = psd.Name;
