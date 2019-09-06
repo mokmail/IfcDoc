@@ -142,6 +142,10 @@ namespace BuildingSmart.Serialization.Xml
 					{
 						Type genericType = propertyType.GetGenericArguments()[0];
 						PropertyInfo uniqueIdProperty = genericType.GetProperty("id", typeof(string));
+						PropertyInfo folderNameProperty = genericType.GetProperty("_folderName", typeof(string));
+						if (folderNameProperty == null)
+							folderNameProperty = uniqueIdProperty;
+						
 						PropertyInfo nameProp = objectType.GetProperty("Name", typeof(string));
 						if (uniqueIdProperty != null)
 						{
@@ -187,7 +191,7 @@ namespace BuildingSmart.Serialization.Xml
 											foreach (object nested in group)
 											{
 												_ObjectStore.MarkSerialized(nested);
-												string nestedObjectPath = Path.Combine(alphaPath, removeInvalidFile(uniqueIdProperty.GetValue(nested).ToString()));
+												string nestedObjectPath = Path.Combine(alphaPath, removeInvalidFile(folderNameProperty.GetValue(nested).ToString()));
 												Directory.CreateDirectory(nestedObjectPath);
 												queue.Enqueue(new QueueData(Path.Combine(nestedObjectPath, removeInvalidFile(nested.GetType().Name) + ".xml"), nested));
 											}
@@ -199,7 +203,7 @@ namespace BuildingSmart.Serialization.Xml
 										if (nested == null)
 											continue;
 										_ObjectStore.MarkSerialized(nested);
-										string nestedObjectPath = Path.Combine(nestedPath, removeInvalidFile(uniqueIdProperty.GetValue(nested).ToString()));
+										string nestedObjectPath = Path.Combine(nestedPath, removeInvalidFile(folderNameProperty.GetValue(nested).ToString()));
 										Directory.CreateDirectory(nestedObjectPath);
 										queue.Enqueue(new QueueData(Path.Combine(nestedObjectPath, removeInvalidFile(propertyInfo.Name) + ".xml"), nested));
 									}

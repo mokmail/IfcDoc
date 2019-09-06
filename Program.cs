@@ -1103,6 +1103,8 @@ namespace IfcDoc
 							result = new DocQuantity() { Name = template.Name, UniqueId = id, Documentation = template.Description };
 							m_Project.Quantities.Add(result);
 						}
+						else
+							result = existing;
 					}
 					else
 					{
@@ -1177,6 +1179,8 @@ namespace IfcDoc
 							result = new DocProperty() { Name = template.Name, UniqueId = id, Documentation = template.Description };
 							m_Project.Properties.Add(result);
 						}
+						else
+							result = existing;
 					}
 					else
 					{
@@ -1207,7 +1211,7 @@ namespace IfcDoc
 				if (simplePropertyTemplate != null)
 				{
 					if (simplePropertyTemplate.TemplateType == null)
-						changes.Add("  XXX " + template.Name + " has no nominated quantity template type!");
+						changes.Add("  XXX " + template.Name + " has no nominated property template type!");
 					else
 					{
 						DocPropertyTemplateTypeEnum templateType = DocPropertyTemplateTypeEnum.P_SINGLEVALUE;
