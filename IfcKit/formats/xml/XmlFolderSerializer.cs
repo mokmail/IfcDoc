@@ -23,19 +23,6 @@ namespace BuildingSmart.Serialization.Xml
 {
 	public class XmlFolderSerializer : XmlSerializer
 	{
-		internal class QueueData
-		{
-			internal string FilePath { get; set; }
-			internal object PayLoad { get; set; }
-
-			internal QueueData(string path, object payload) { FilePath = path; PayLoad = payload; }
-
-			public override string ToString()
-			{
-				return PayLoad.ToString() + " " + FilePath;
-			}
-		}
-
 		private Dictionary<string, string> m_typeFilePrefix = new Dictionary<string, string>();
 		private Dictionary<string, string> m_typeNoFilePrefix = new Dictionary<string, string>();
 		private Dictionary<Type, string> m_NominatedTypeFilePrefix = new Dictionary<Type, string>();
@@ -102,12 +89,9 @@ namespace BuildingSmart.Serialization.Xml
 			if (root == null)
 				throw new ArgumentNullException("root");
 
-			Queue<QueueData> queue = new Queue<QueueData>();
 
 			writeFirstPassForIds(root, new HashSet<string>());
-			WriteNestedObject(new QueueData(Path.Combine(folderPath, removeInvalidFile(root.GetType().Name)+".xml"), root), queue);
-			while (queue.Count > 0)
-				WriteNestedObject(queue.Dequeue(), queue);
+			writeObjectFolder(Path.Combine(folderPath, removeInvalidFile(root.GetType().Name)+".xml"), root);
 		}
 
 		private string removeInvalidFile(string str)
@@ -118,15 +102,15 @@ namespace BuildingSmart.Serialization.Xml
 
 			return result;
 		}
-		private void WriteNestedObject(QueueData dataObject, Queue<QueueData> queue)
+		private void writeObjectFolder(string filePath, object obj)
 		{
-			object obj = dataObject.PayLoad;
 			_ObjectStore.UnMarkSerialized(obj);
 			Type objectType = obj.GetType(), stringType = typeof(String);
 
-			string folderPath = Path.GetDirectoryName(dataObject.FilePath);
+			string folderPath = Path.GetDirectoryName(filePath);
 			HashSet<string> nestedProperties = new HashSet<string>();
 
+			List<Tuple<string, object, bool>> queued = new List<Tuple<string, object, bool>>();
 			IList<PropertyInfo> fields = this.GetFieldsOrdered(objectType);
 			foreach (PropertyInfo propertyInfo in fields)
 			{
@@ -138,6 +122,7 @@ namespace BuildingSmart.Serialization.Xml
 
 				if (xmlArrayAttribute != null && xmlArrayItemAttribute != null)
 				{
+					bool isLeaf = xmlArrayItemAttribute != null && string.Compare(xmlArrayItemAttribute.DataType, "_leaf_", true) == 0;
 					if (string.IsNullOrEmpty(xmlArrayItemAttribute.ElementName) && xmlArrayItemAttribute.NestingLevel > 0 && propertyType.IsGenericType && typeof(IEnumerable).IsAssignableFrom(propertyType.GetGenericTypeDefinition()))
 					{
 						Type genericType = propertyType.GetGenericArguments()[0];
@@ -191,9 +176,10 @@ namespace BuildingSmart.Serialization.Xml
 											foreach (object nested in group)
 											{
 												_ObjectStore.MarkSerialized(nested);
-												string nestedObjectPath = Path.Combine(alphaPath, removeInvalidFile(folderNameProperty.GetValue(nested).ToString()));
+												string nestedObjectPath = isLeaf ? alphaPath : Path.Combine(alphaPath, removeInvalidFile(folderNameProperty.GetValue(nested).ToString()));
 												Directory.CreateDirectory(nestedObjectPath);
-												queue.Enqueue(new QueueData(Path.Combine(nestedObjectPath, removeInvalidFile(nested.GetType().Name) + ".xml"), nested));
+												string fileName = removeInvalidFile((isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : nested.GetType().Name) + ".xml");
+												queued.Add(new Tuple<string, object, bool>(Path.Combine(nestedObjectPath, fileName), nested, isLeaf));
 											}
 										}
 										continue;
@@ -203,9 +189,10 @@ namespace BuildingSmart.Serialization.Xml
 										if (nested == null)
 											continue;
 										_ObjectStore.MarkSerialized(nested);
-										string nestedObjectPath = Path.Combine(nestedPath, removeInvalidFile(folderNameProperty.GetValue(nested).ToString()));
+										string nestedObjectPath = isLeaf ? nestedPath : Path.Combine(nestedPath, removeInvalidFile(isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : folderNameProperty.GetValue(nested).ToString()));
 										Directory.CreateDirectory(nestedObjectPath);
-										queue.Enqueue(new QueueData(Path.Combine(nestedObjectPath, removeInvalidFile(propertyInfo.Name) + ".xml"), nested));
+										string fileName = removeInvalidFile((isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : nested.GetType().Name) + ".xml");
+										queued.Add(new Tuple<string, object, bool>(Path.Combine(nestedObjectPath, fileName), nested, isLeaf));
 									}
 								}
 							}
@@ -266,10 +253,23 @@ namespace BuildingSmart.Serialization.Xml
 			if (nestedProperties.Count < fields.Count)
 			{
 				_ObjectStore.UnMarkSerialized(obj);
-				using (FileStream fileStream = new FileStream(dataObject.FilePath, FileMode.Create, FileAccess.Write))
+				using (FileStream fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
 				{
 					writeObject(fileStream, obj, nestedProperties);
 				}
+			}
+			foreach (Tuple<string, object,bool> o in queued)
+			{
+				if(o.Item3)
+				{
+					_ObjectStore.UnMarkSerialized(o.Item2);
+					using (FileStream fileStream = new FileStream(o.Item1, FileMode.Create, FileAccess.Write))
+					{
+						writeObject(fileStream, o.Item2, new HashSet<string>());
+					}
+				}
+				else
+					writeObjectFolder(o.Item1, o.Item2);
 			}
 		}
 
@@ -289,35 +289,18 @@ namespace BuildingSmart.Serialization.Xml
 			if (files == null || files.Length == 0)
 				return null;
 
-			if (files.Length > 1)
-				throw new Exception("Unexpected multiple xml files in folder " + folderPath);
+			object result = readFile(files[0], nominatedType, instances, queuedObjects);
+			if (result == null)
+				return null;
 
-			string filePath = files[0];
-			string fileName = Path.GetFileNameWithoutExtension(filePath);
-			Type detectedType = GetTypeByName(fileName);
-			if (detectedType != null && nominatedType != null && !detectedType.IsSubclassOf(nominatedType))
-				detectedType = null;
-
-			string typeName = detectedType == null ? "" : detectedType.Name;
-
-			object result = null;
-			using (FileStream streamSource = new FileStream(filePath, FileMode.Open))
-			{
-				XmlReaderSettings settings = new XmlReaderSettings { NameTable = new NameTable() };
-				XmlNamespaceManager xmlns = new XmlNamespaceManager(settings.NameTable);
-				xmlns.AddNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
-				XmlParserContext context = new XmlParserContext(null, xmlns, "", XmlSpace.Default);
-				using (XmlReader reader = XmlReader.Create(streamSource, settings, context))
-				{
-					result = ReadEntity(reader, instances, typeName, queuedObjects);
-				}
-			}
+			Type objectType = result.GetType();
+			
 			foreach (string file in Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly))
 			{
 				string extension = Path.GetExtension(file);
 				if (string.Compare(file, ".xml", true) == 0)
 					continue;
-				PropertyInfo f = GetFieldByName(detectedType == null ? nominatedType : detectedType, Path.GetFileNameWithoutExtension(file));
+				PropertyInfo f = GetFieldByName(objectType, Path.GetFileNameWithoutExtension(file));
 				if (f != null)
 				{
 					Type type = f.PropertyType;
@@ -338,7 +321,7 @@ namespace BuildingSmart.Serialization.Xml
 			foreach(string directory in directories)
 			{
 				string directoryName = new DirectoryInfo(directory).Name;	
-				PropertyInfo f = GetFieldByName(detectedType == null ? nominatedType : detectedType , directoryName);
+				PropertyInfo f = GetFieldByName(objectType, directoryName);
 				if (f != null)
 				{
 					if (IsEntityCollection(f.PropertyType))
@@ -356,11 +339,28 @@ namespace BuildingSmart.Serialization.Xml
 						foreach(string subDir in subDirectories)
 						{
 							string[] subfiles = Directory.GetFiles(subDir, "*.xml", SearchOption.TopDirectoryOnly);
-							if (subfiles.Length > 0)
+							if(subfiles.Length == 1)
 							{
 								object o = readFolder(subDir, collectionGeneric, instances, queuedObjects);
 								if (o != null)
 									objects.Add(o);
+							}
+							if (subfiles.Length > 1)
+							{
+								foreach (string subfile in subfiles)
+								{
+									object o = readFile(subfile, collectionGeneric, instances, queuedObjects);
+
+									if (o != null)
+									{
+										try
+										{
+											methodAdd.Invoke(list, new object[] { o }); // perf!!
+										}
+										catch (Exception) { }
+									}
+								}
+
 							}
 							else
 							{
@@ -391,6 +391,29 @@ namespace BuildingSmart.Serialization.Xml
 					}
 				}
 
+			}
+			return result;
+		}
+		private object readFile(string filePath, Type nominatedType, Dictionary<string,object> instances, QueuedObjects queuedObjects)
+		{
+			string fileName = Path.GetFileNameWithoutExtension(filePath);
+			Type detectedType = GetTypeByName(fileName);
+			if (detectedType != null && nominatedType != null && !detectedType.IsSubclassOf(nominatedType))
+				detectedType = null;
+
+			string typeName = detectedType == null ? "" : detectedType.Name;
+
+			object result = null;
+			using (FileStream streamSource = new FileStream(filePath, FileMode.Open))
+			{
+				XmlReaderSettings settings = new XmlReaderSettings { NameTable = new NameTable() };
+				XmlNamespaceManager xmlns = new XmlNamespaceManager(settings.NameTable);
+				xmlns.AddNamespace("xsi", "http://www.w3.org/2001/XMLSchema-instance");
+				XmlParserContext context = new XmlParserContext(null, xmlns, "", XmlSpace.Default);
+				using (XmlReader reader = XmlReader.Create(streamSource, settings, context))
+				{
+					result = ReadEntity(reader, instances, typeName, queuedObjects);
+				}
 			}
 			return result;
 		}

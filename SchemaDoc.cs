@@ -677,9 +677,9 @@ namespace IfcDoc.Schema.DOC
 		[DataMember(Order = 9)] [XmlArray(Order = 14)] public List<DocAbbreviation> Abbreviations { get; protected set; } // new in 4.3
 		[DataMember(Order = 10)] [XmlArray(Order = 15)] public List<DocAnnotation> Annotations { get; protected set; } // new in 8.7: Cover | Foreword | Introduction; Deprecated in 9.6
 		[DataMember(Order = 11)] [XmlArray(Order = 16)] [XmlArrayItem(NestingLevel = 1)] public List<DocPublication> Publications { get; protected set; } // new in 9.6
-		[DataMember(Order = 12)] [XmlArray(Order = 0)] [XmlArrayItem(NestingLevel = 2)] public List<DocConstant> Constants { get; protected set; } // 12.1 
-		[DataMember(Order = 13)] [XmlArray(Order = 1)] [XmlArrayItem(NestingLevel = 2)] public List<DocPropertyConstant> PropertyConstants { get; protected set; } // 12.1 
-		[DataMember(Order = 14)] [XmlArray(Order = 2)] [XmlArrayItem(NestingLevel = 2)] public List<DocPropertyEnumeration> PropertyEnumerations { get; protected set; } // 12.1
+		[DataMember(Order = 12)] [XmlArray(Order = 0)] [XmlArrayItem(NestingLevel = 2, DataType ="_leaf_")] public List<DocConstant> Constants { get; protected set; } // 12.1 
+		[DataMember(Order = 13)] [XmlArray(Order = 1)] [XmlArrayItem(NestingLevel = 2, DataType = "_leaf_")] public List<DocPropertyConstant> PropertyConstants { get; protected set; } // 12.1 
+		[DataMember(Order = 14)] [XmlArray(Order = 2)] [XmlArrayItem(NestingLevel = 2, DataType = "_leaf_")] public List<DocPropertyEnumeration> PropertyEnumerations { get; protected set; } // 12.1
 		[DataMember(Order = 15)] [XmlArray(Order = 3)] [XmlArrayItem(NestingLevel = 2)] public List<DocProperty> Properties { get; protected set; } // 12.1 
 		[DataMember(Order = 16)] [XmlArray(Order = 4)] [XmlArrayItem(NestingLevel = 2)] public List<DocQuantity> Quantities { get; protected set; } // 12.1
 
@@ -2618,7 +2618,7 @@ namespace IfcDoc.Schema.DOC
 		[DataMember(Order = 7), Obsolete] private string _FieldType3 { get; set; } // type of custom field #3, e.g. "IfcDistributionSystemTypeEnum"
 		[DataMember(Order = 8), Obsolete] private string _FieldType4 { get; set; } // type of custom field #4, e.g. "IfcFlowDirectionEnum"        
 		[DataMember(Order = 9)] [XmlArray] public List<DocModelRule> Rules { get; protected set; } //NEW IN 2.5
-		[DataMember(Order = 10)] [XmlArray] [XmlArrayItem(NestingLevel = 1)] public List<DocTemplateDefinition> Templates { get; protected set; } // NEW IN 2.7 sub-templates
+		[DataMember(Order = 10)] [XmlArray] public List<DocTemplateDefinition> Templates { get; protected set; } // NEW IN 2.7 sub-templates
 		[DataMember(Order = 11)] [XmlAttribute] public bool IsDisabled { get; set; }
 
 		private bool? _validation; // unserialized; null: no applicable instances; false: one or more failures; true: all pass
