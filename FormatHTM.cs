@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 
 using HtmlAgilityPack;
 
@@ -1647,17 +1648,6 @@ namespace IfcDoc.Format.HTM
 			if (content == null)
 				return;
 
-			// strip off "Definition from IAI"
-
-			content = content.Replace("<u>Definition from IAI</u>:", "");
-			content = content.Replace("<U>Definition from IAI</U>:", "");
-			content = content.Replace("<u>Definition from IAI:</u>", "");
-			content = content.Replace("<U>Definition from IAI:</U>", "");
-			content = content.Replace("<i>Definition from IAI</i>:", "");
-			content = content.Replace("<u><b>Definition from IAI</b></u>:", "");
-			content = content.Replace("<b><u>Definition from IAI</u></b>:", "");
-			content = content.Replace("Definition from IAI:", "");
-
 			// target="SOURCE" -> target="info" (for transition; need to update vex)
 			content = content.Replace("target=\"SOURCE\"", "target=\"info\"");
 
@@ -1869,6 +1859,10 @@ namespace IfcDoc.Format.HTM
 			}
 			else
 			{
+				string relativePath = "../../../";
+				if (current is DocPropertyEnumeration)
+					relativePath = "../";
+				content = Regex.Replace(content, "../(../)+figures", relativePath + "figures");
 				int i = content.Length - 1;
 				while (i > 0)
 				{
@@ -1885,7 +1879,7 @@ namespace IfcDoc.Format.HTM
 							string target = Properties.Settings.Default.OutputPath + "\\" + DocumentationISO.MakeLinkName(docPublication) + "\\html\\figures\\" + imgold;
 							if (current is DocExample)
 							{
-								source = Properties.Settings.Default.InputPathExamples + "\\" + imgold;
+								source = Properties.Settings.Default.InputPathGeneral + "\\examples\\" + imgold;
 								target = Properties.Settings.Default.OutputPath + "\\" + DocumentationISO.MakeLinkName(docPublication) + "\\html\\figures\\examples\\" + imgold;
 							}
 

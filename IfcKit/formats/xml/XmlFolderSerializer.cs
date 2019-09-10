@@ -243,7 +243,7 @@ namespace BuildingSmart.Serialization.Xml
 							{
 								nestedProperties.Add(propertyInfo.Name);
 								string txtPath = Path.Combine(folderPath, propertyInfo.Name + fileExtension);
-								File.WriteAllText(txtPath, txt);
+								File.WriteAllText(txtPath, txt, Encoding.UTF8);
 								continue;
 							}
 						}

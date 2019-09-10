@@ -3446,7 +3446,7 @@ namespace IfcDoc
 
 							if (obj is DocExample)
 							{
-								imgnew = Properties.Settings.Default.InputPathExamples + "\\" + imgold;
+								imgnew = Properties.Settings.Default.InputPathGeneral + "\\examples\\" + imgold;
 							}
 
 							content = content.Substring(0, i + 10) + imgnew + content.Substring(t);
