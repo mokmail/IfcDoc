@@ -257,9 +257,9 @@ namespace IfcDoc
             if (this.m_conceptleaf != null)
             {
                 docTemplate = this.m_conceptleaf.Definition;
-				if (docTemplate.Uuid == DocTemplateDefinition.guidTemplatePropertyBounded || docTemplate.Uuid == DocTemplateDefinition.guidTemplatePropertyEnumerated ||
+				if (docTemplate != null && (docTemplate.Uuid == DocTemplateDefinition.guidTemplatePropertyBounded || docTemplate.Uuid == DocTemplateDefinition.guidTemplatePropertyEnumerated ||
 					docTemplate.Uuid == DocTemplateDefinition.guidTemplatePropertyList || docTemplate.Uuid == DocTemplateDefinition.guidTemplatePropertyReference ||
-					docTemplate.Uuid == DocTemplateDefinition.guidTemplatePropertySingle || docTemplate.Uuid == DocTemplateDefinition.guidTemplatePropertyTable)
+					docTemplate.Uuid == DocTemplateDefinition.guidTemplatePropertySingle || docTemplate.Uuid == DocTemplateDefinition.guidTemplatePropertyTable))
 				{
 					listItems = new List<DocTemplateItem>();
 					foreach(DocTemplateUsage concept in ((DocTemplateItem)this.ConceptItem).Concepts)

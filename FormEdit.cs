@@ -5661,6 +5661,7 @@ namespace IfcDoc
 
 			// count active roots
 			int progressTotal = 2;
+			Dictionary<DocObject, bool> included = new Dictionary<DocObject, bool>();
 			foreach (DocModelView docView in this.m_filterviews)
 			{
 				// reset state
@@ -5670,6 +5671,7 @@ namespace IfcDoc
 					{
 						docUsage.ResetValidation();
 					}
+					m_project.RegisterObjectsInScope(docView, included);
 				}
 
 				progressTotal += docView.ConceptRoots.Count;
@@ -5679,18 +5681,21 @@ namespace IfcDoc
 
 			// build schema dynamically
 			this.backgroundWorkerValidate.ReportProgress(++progress, "Compiling schema...");
-			Type typeProject = Compiler.CompileProject(this.m_project);
+			Type typeProject = Compiler.CompileProject(this.m_project, m_filterviews, m_filterexchange, false);
 			this.m_assembly = typeProject.Assembly;
 
 			Dictionary<string, Type> typemap = new Dictionary<string, Type>();
 			foreach (Type t in typeProject.Assembly.GetTypes())
 			{
-				typemap.Add(t.Name, t);
+				DocDefinition docDefinition = m_project.GetDefinition(t.Name);
+				if(docDefinition != null && included.ContainsKey(docDefinition))
+					typemap.Add(t.Name, t);
 			}
-
+			
 			int grandtotallist = 0;
 			int grandtotalskip = 0;
 			int grandtotalpass = 0;
+			int invalidEntityCount = 0;
 			StringBuilder sb = new StringBuilder();
 
 			// Example:
@@ -5709,7 +5714,49 @@ namespace IfcDoc
 					object project = formatSource.ReadObject(streamSource, out instances);
 					this.m_testInstances = instances;
 
+					Dictionary<Type, List<DocConceptRoot>> mapTypeConcepts = new Dictionary<Type, List<DocConceptRoot>>();
+					IEnumerable<IGrouping<Type, object>> groups = instances.Values.GroupBy(x => x.GetType());
+					Dictionary<Type, List<object>> mapTypeObjects = new Dictionary<Type, List<object>>();
+
+					string invalidEntities = "";
+					foreach (IGrouping<Type, object> group in groups.OrderBy(x=>x.Key.Name))
+					{
+						if (!typemap.ContainsKey(group.Key.Name))
+						{
+							int count = group.Count();
+							invalidEntities += ", " + group.Key.Name + "(" + count + ")";
+							invalidEntityCount += count;
+						}
+						else
+						{
+							mapTypeObjects[group.Key] = group.ToList();
+						}
+					}
+					if(!string.IsNullOrEmpty(invalidEntities))
+					{
+						sb.AppendLine("<h3>Invalid Entities</h3>");
+						sb.AppendLine("<p>" + invalidEntities.Substring(2) + "</p>");
+					}
+
 					// now iterate through each concept root
+					foreach (DocModelView docView in this.m_filterviews)
+					{
+						foreach (DocConceptRoot docRoot in docView.ConceptRoots)
+						{
+							if (this.backgroundWorkerValidate.CancellationPending)
+								return;
+
+							Type typeEntity = null;
+							if (typemap.TryGetValue(docRoot.ApplicableEntity.Name, out typeEntity))
+							{
+								List<DocConceptRoot> conceptRoots = new List<DocConceptRoot>();
+								if (!mapTypeConcepts.TryGetValue(typeEntity, out conceptRoots))
+									conceptRoots = new List<DocConceptRoot>();
+								conceptRoots.Add(docRoot);
+								mapTypeConcepts[typeEntity] = conceptRoots;
+							}
+						}
+					}
 					foreach (DocModelView docView in this.m_filterviews)
 					{
 						foreach (DocConceptRoot docRoot in docView.ConceptRoots)
@@ -5724,22 +5771,58 @@ namespace IfcDoc
 							{
 								// build list of instances
 								List<object> list = new List<object>();
-								foreach (object instance in instances.Values)
-								{
-									if (typeEntity.IsInstanceOfType(instance))
-									{
-										list.Add(instance);
-									}
-								}
-
-								//if (list.Count > 0)
+								if(mapTypeObjects.TryGetValue(typeEntity, out list))
 								{
 									sb.AppendLine("<h3>" + docRoot.ApplicableEntity.Name + " (" + list.Count + ")</h3>");
-
+									List<DocTemplateUsage> inheritedUsage = new List<DocTemplateUsage>();
+									Type baseType = typeEntity.BaseType;
+									while(baseType != null)
+									{
+										List<DocConceptRoot> roots = new List<DocConceptRoot>();
+										if(mapTypeConcepts.TryGetValue(baseType, out roots))
+										{ 
+											List<DocTemplateUsage> usage = new List<DocTemplateUsage>();
+											foreach (DocConceptRoot r in roots)
+											{
+												foreach (DocTemplateUsage docTemplateUsage in r.Concepts)
+												{
+													bool overridden = false;
+													if (docTemplateUsage.Definition != null)
+													{
+														foreach (DocTemplateUsage dtu in docRoot.Concepts)
+														{
+															if (dtu.Definition == docTemplateUsage.Definition)
+															{
+																overridden = true;
+																break;
+															}
+														}
+														foreach (DocTemplateUsage dtu in inheritedUsage)
+														{
+															if (dtu.Definition == docTemplateUsage.Definition)
+															{
+																overridden = true;
+																break;
+															}
+														}
+													}
+													if (!overridden)
+														usage.Add(docTemplateUsage);
+												}
+											}
+											inheritedUsage.InsertRange(0, usage);
+										}
+										baseType = baseType.BaseType;
+									}
+									foreach(DocTemplateUsage docUsage in inheritedUsage)
+									{
+										ValidateConcept(docUsage, docView, DocExchangeRequirementEnum.NotRelevant, typeEntity, list, sb, typemap, ref grandtotalpass, ref grandtotalskip, ref grandtotallist);
+									}
 									foreach (DocTemplateUsage docUsage in docRoot.Concepts)
 									{
 										ValidateConcept(docUsage, docView, DocExchangeRequirementEnum.NotRelevant, typeEntity, list, sb, typemap, ref grandtotalpass, ref grandtotalskip, ref grandtotallist);
 									}
+									
 								}
 							}
 						}
@@ -5782,6 +5865,7 @@ namespace IfcDoc
 						writer.WriteLine("<tr><td>Project File</td><td>" + this.m_file + "</td></tr>");
 						writer.WriteLine("<tr><td>Model View</td><td>" + this.m_filterviews[0].Name + "</td></tr>");
 						writer.WriteLine("<tr><td>Exchange</td><td>" + exchange + "</td></tr>");
+						writer.WriteLine("<tr><td>Invalid Entities</td><td>" + invalidEntityCount + "</td></tr>");
 						writer.WriteLine("<tr><td>Tests Executed</td><td>" + grandtotallist + "</td></tr>");
 						writer.WriteLine("<tr><td>Tests Passed</td><td>" + grandtotalpass + "</td></tr>");
 						writer.WriteLine("<tr><td>Tests Ignored</td><td>" + grandtotalskip + "</td></tr>");
@@ -6139,7 +6223,7 @@ namespace IfcDoc
 					{
 						// check for if there are no parameters
 
-						sbDetail.Append("<tr valign=\"top\"><td>#");
+						sbDetail.Append("<tr valign=\"top\"><td>");
 						sbDetail.Append(GetObjectIdentifier(ent));
 						sbDetail.Append("</td><td>");
 
@@ -7139,6 +7223,11 @@ namespace IfcDoc
 					}
 
 					docObj.Name = e.Label;
+					DocTemplateUsage usage = docObj as DocTemplateUsage;
+					if(usage != null)
+					{
+						usage.Definition.Name = e.Label;
+					}
 					e.Node.Text = docObj.ToString();
 					e.CancelEdit = true; // prevent from updating to other text
 
@@ -9870,17 +9959,15 @@ namespace IfcDoc
 		/// <returns></returns>
 		private static string GetObjectIdentifier(object o)
 		{
-			System.Reflection.FieldInfo fieldinfo = o.GetType().GetField("_GlobalId");
-			if (fieldinfo != null)
+			System.Reflection.PropertyInfo propertyinfo = o.GetType().GetProperty("GlobalId");
+			if (propertyinfo != null)
 			{
-				object globalid = fieldinfo.GetValue(o);
+				object globalid = propertyinfo.GetValue(o);
 				if (globalid != null)
 				{
-					System.Reflection.FieldInfo fieldval = globalid.GetType().GetField("Value");
-					if (fieldval != null)
-					{
-						return fieldval.GetValue(globalid) as string;
-					}
+					propertyinfo = globalid.GetType().GetProperty("Value");
+					if(propertyinfo != null)
+						return propertyinfo.GetValue(globalid).ToString();
 				}
 			}
 

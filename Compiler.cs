@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -26,7 +27,7 @@ namespace IfcDoc
 	public class Compiler
 	{
 		private DocProject m_project;
-		private DocModelView[] m_views;
+		private Dictionary<string, DocModelView> m_views;
 		private DocExchangeDefinition m_exchange;
 		private AssemblyBuilder m_assembly;
 		private ModuleBuilder m_module;
@@ -45,7 +46,11 @@ namespace IfcDoc
 
 		public static Type CompileProject(DocProject docProject, bool psets)
 		{
-			Compiler compiler = new Compiler(docProject, null, null, psets);
+			return CompileProject(docProject, null, null, psets);
+		}
+		public static Type CompileProject(DocProject docProject, DocModelView[] views, DocExchangeDefinition exchangeDefinition,  bool psets)
+		{
+			Compiler compiler = new Compiler(docProject, views, exchangeDefinition, psets);
 			System.Reflection.Emit.AssemblyBuilder assembly = compiler.Assembly;
 			Type[] types = null;
 			try
@@ -70,7 +75,12 @@ namespace IfcDoc
 		public Compiler(DocProject project, DocModelView[] views, DocExchangeDefinition exchange, bool psets)
 		{
 			this.m_project = project;
-			this.m_views = views;
+			this.m_views = new Dictionary<string, DocModelView>();
+			if (views != null)
+			{
+				foreach (DocModelView view in views)
+					addModelView(view);
+			}
 			this.m_exchange = exchange;
 			this.m_psets = psets;
 
@@ -97,7 +107,7 @@ namespace IfcDoc
 			if (this.m_views != null)
 			{
 				included = new Dictionary<DocObject, bool>();
-				foreach (DocModelView docView in this.m_views)
+				foreach (DocModelView docView in this.m_views.Values)
 				{
 					this.m_project.RegisterObjectsInScope(docView, included);
 				}
@@ -202,7 +212,7 @@ namespace IfcDoc
 			// find associated ConceptRoot for model view, define validation function
 			if (this.m_views != null)
 			{
-				foreach (DocModelView view in this.m_views)
+				foreach (DocModelView view in this.m_views.Values)
 				{
 					string viewname = view.Code;
 					foreach (DocConceptRoot root in view.ConceptRoots)
@@ -313,7 +323,15 @@ namespace IfcDoc
             }
 #endif
 		}
-
+		private void addModelView(DocModelView view)
+		{
+			if(view != null && !m_views.ContainsKey(view.UniqueId))
+			{
+				m_views[view.UniqueId] = view;
+				if (!string.IsNullOrEmpty(view.BaseView))
+					addModelView(m_project.ModelViews.Where(x => string.Compare(view.BaseView, x.UniqueId) == 0).FirstOrDefault());
+			}
+		}
 		private void CompileConcept(DocTemplateUsage concept, DocModelView view, TypeBuilder tb)
 		{
 			bool includeconcept = true;
@@ -374,9 +392,6 @@ namespace IfcDoc
 				if (methodTemplate != null && methodTemplate.DeclaringType.IsAssignableFrom(tb))
 				{
 					string methodname = DocumentationISO.MakeLinkName(view) + "_" + DocumentationISO.MakeLinkName(concept.Definition);
-
-
-
 					MethodBuilder method = tb.DefineMethod(methodname, MethodAttributes.Public, CallingConventions.HasThis, typeof(bool[]), null);
 					ILGenerator generator = method.GetILGenerator();
 

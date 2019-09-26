@@ -1210,6 +1210,23 @@ namespace IfcDoc.Schema.DOC
 			return docSchema;
 		}
 
+		private bool RegisterSelect(Dictionary<DocObject,bool> included, DocSelect select)
+		{
+			foreach (DocSelectItem item in select.Selects)
+			{
+				DocDefinition docDefinition = this.GetDefinition(item.Name);
+				DocEntity entity = docDefinition as DocEntity;
+				if(entity != null)
+					RegisterEntity(included, entity);
+				else
+				{
+					DocSelect itemSelect = docDefinition as DocSelect;
+					if (itemSelect != null)
+						RegisterSelect(included, itemSelect);
+				}
+			}
+			return true;
+		}
 		/// <summary>
 		/// Registers any select objects that are already in scope
 		/// </summary>
@@ -1372,6 +1389,14 @@ namespace IfcDoc.Schema.DOC
 									included[docDefRef] = true;
 								}
 							}
+							else
+							{
+								DocSelect select = docAttrType as DocSelect;
+								if(select != null)
+								{
+									RegisterSelect(included, select);
+								}
+							}
 						}
 					}
 				}
@@ -1497,11 +1522,6 @@ namespace IfcDoc.Schema.DOC
 		{
 			if (included.ContainsKey(template))
 				return;
-
-			if (template.Name != null && template.Name.Equals("Swept Solid Geometry"))
-			{
-				this.ToString();
-			}
 
 			included[template] = true;
 
@@ -1637,11 +1657,6 @@ namespace IfcDoc.Schema.DOC
 
 			foreach (DocConceptRoot docRoot in docView.ConceptRoots)
 			{
-				string docRootName = docRoot.ToString();
-				if (docRootName == "IfcBridge")
-				{
-					Console.WriteLine("Stop");
-				}
 				if (docRoot.ApplicableEntity != null)
 				{
 					RegisterEntity(included, docRoot.ApplicableEntity);
@@ -3587,21 +3602,28 @@ namespace IfcDoc.Schema.DOC
 			if (target == null)
 				return false;
 
-			// (1) check if field is defined on target object; if not, then this rule does not apply.
-			FieldInfo fieldinfo = target.GetType().GetField(this.Name);
-			if (fieldinfo == null)
-				return null; // return NULL, not FALSE -- field is not applicable to object, e.g. PredefinedType may not exist on a given subtype (e.g. IFC2x3 IfcColumn)
-
-			// (2) extract the value
-			object value = fieldinfo.GetValue(target); // may be null
+			object value = null;
+			Type targetType = target.GetType();
+			// (1) check if property/field is defined on target object; if not, then this rule does not apply.
+			PropertyInfo propertyInfo = targetType.GetProperty(this.Name);
+			if (propertyInfo == null)
+			{
+				FieldInfo fieldinfo = target.GetType().GetField(this.Name);
+				if (fieldinfo == null)
+					return null; // return NULL, not FALSE -- field is not applicable to object, e.g. PredefinedType may not exist on a given subtype (e.g. IFC2x3 IfcColumn)
+								 // (2) extract the value
+				value = fieldinfo.GetValue(target); // may be null
+			}
+			else
+				value = propertyInfo.GetValue(target);
 
 			if (docItem != null && value == null)
 				return false; // structure required to exist
 
 			bool? checkcard = null;
-			if (value is System.Collections.IList)
+			if (value is System.Collections.IEnumerable)
 			{
-				System.Collections.IList list = (System.Collections.IList)value;
+				System.Collections.IEnumerable list = (System.Collections.IEnumerable)value;
 				int pass = 0;
 				int fail = 0;
 
@@ -3745,67 +3767,82 @@ namespace IfcDoc.Schema.DOC
 			if (!t.IsInstanceOfType(target))
 				return null; // if instance doesn't match, return null (not failure) to skip it, e.g. IfcObject.IsDefinedBy\IfcRelDefinesByType encountered while looking for IfcObject.IsDefinedBy\IfcRelDefinesByProperties
 
-			if (target is SEntity)
+			bool canpass = true; // if false, then can only be null (if not applicable due to parameter filtered out), or false (failure)
+
+			// first pass: catch any conditional parameters
+			List<DocModelRule> nonConditionalRules = new List<DocModelRule>();
+			foreach (DocModelRule rule in this.Rules)
 			{
-				bool canpass = true; // if false, then can only be null (if not applicable due to parameter filtered out), or false (failure)
-
-				// first pass: catch any conditional parameters
-				foreach (DocModelRule rule in this.Rules)
+				if (rule.IsCondition())
 				{
-					if (rule.IsCondition())
-					{
-						bool? result = rule.Validate(target, docItem, typemap, trace, root, docOuterConcept, conditions);
+					bool? result = rule.Validate(target, docItem, typemap, trace, root, docOuterConcept, conditions);
 
-						// entity rule is inapplicable if any attribute rules are inapplicable
-						if (result == null || !result.Value)
-						{
-							trace.Remove(this);
-							return null;
-						}
+					// entity rule is inapplicable if any attribute rules are inapplicable
+					if (result == null || !result.Value)
+					{
+						trace.Remove(this);
+						return null;
+					}
 
 #if false
-                        // entity rule fails if any attribute rules fail
-                        if (!result.Value)
-                        {
-                            return null;
-                            canpass = false;
-                        }
-#endif
-					}
-				}
-
-				// second pass: catch any non-conditional parameters
-				foreach (DocModelRule rule in this.Rules)
-				{
-					if (!rule.IsCondition())
+					// entity rule fails if any attribute rules fail
+					if (!result.Value)
 					{
-						bool? result = rule.Validate(target, docItem, typemap, trace, root, docOuterConcept, conditions);
-
-						// entity rule is inapplicable if any attribute rules are inapplicable
-						if (result == null)
-						{
-							trace.Remove(this);
-							return null;
-						}
-
-						// entity rule fails if any attribute rules fail
-						if (!result.Value)
-						{
-							canpass = false;
-						}
+						return null;
+						canpass = false;
 					}
+#endif
 				}
-
-				if (canpass)
-				{
-					trace.Remove(this);
-				}
-
-				return canpass;
+				else
+					nonConditionalRules.Add(rule);
 			}
 
-			trace.Remove(this);
-			return true;
+			// second pass: catch any non-conditional parameters
+			foreach (DocModelRule rule in nonConditionalRules)
+			{
+				bool? result = rule.Validate(target, docItem, typemap, trace, root, docOuterConcept, conditions);
+
+					// entity rule is inapplicable if any attribute rules are inapplicable
+				if (result == null)
+				{
+					trace.Remove(this);
+					return null;
+				}
+
+				// entity rule fails if any attribute rules fail
+				if (!result.Value)
+				{
+					canpass = false;
+				}
+			}
+
+			foreach(DocTemplateDefinition docTemplateDefinition in References)
+			{
+				foreach(DocModelRule rule in docTemplateDefinition.Rules)
+				{
+					bool? result = rule.Validate(target, docItem, typemap, trace, root, docOuterConcept, conditions);
+
+					// entity rule is inapplicable if any attribute rules are inapplicable
+					if (result == null)
+					{
+						trace.Remove(this);
+						return null;
+					}
+
+					// entity rule fails if any attribute rules fail
+					if (!result.Value)
+					{
+						canpass = false;
+					}
+				}
+			}
+			if (canpass)
+			{
+				trace.Remove(this);
+			}
+
+			return canpass;
+
 		}
 
 	}
