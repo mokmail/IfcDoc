@@ -3044,8 +3044,9 @@ namespace IfcDoc
 			mvd.Uuid = doc.Uuid;
 			mvd.Version = EnsureValidString(doc.Version);
 			mvd.Owner = EnsureValidString(doc.Owner);
-			mvd.Status = StatusEnum.Sample;
-			Enum.TryParse<StatusEnum>(doc.Status, out mvd.Status);
+			StatusEnum status = StatusEnum.Sample;
+			if(Enum.TryParse<StatusEnum>(doc.Status, out status))
+				mvd.Status = status;
 			mvd.Copyright = EnsureValidString(doc.Copyright);
 			mvd.Code = EnsureValidString(doc.Code);
 			mvd.Author = EnsureValidString(doc.Author);
@@ -3116,6 +3117,9 @@ namespace IfcDoc
 		internal static void ExportMvdTemplate(ConceptTemplate mvdTemplate, DocTemplateDefinition docTemplateDef, Dictionary<DocObject, bool> included, bool documentation)
 		{
 			ExportMvdObject(mvdTemplate, docTemplateDef, documentation);
+			mvdTemplate.Name = docTemplateDef.Name;
+			if (string.IsNullOrEmpty(mvdTemplate.Name))
+				mvdTemplate.Name = "NOTDEFINED";
 			mvdTemplate.ApplicableEntity = docTemplateDef.Type;
 
 			if (docTemplateDef.Rules != null && docTemplateDef.Rules.Count > 0)
