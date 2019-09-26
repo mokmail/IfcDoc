@@ -87,9 +87,11 @@ namespace BuildingSmart.Serialization
 		
 		protected void Initialize(object o, Type t)
 		{
-			IList<PropertyInfo> fields = GetFieldsAll(t);
-			foreach (PropertyInfo f in fields)
+			IList<KeyValuePair<string,PropertyInfo>> fields = GetFieldsAll(t);
+			foreach (PropertyInfo f in fields.Select(x=>x.Value))
 			{
+				if (f == null)
+					continue;
 				if (f.GetValue(o) == null)
 				{
 					Type type = f.PropertyType;
@@ -183,6 +185,7 @@ namespace BuildingSmart.Serialization
 			DataMemberAttribute dataMemberAttribute = propertyInfo.GetCustomAttribute(typeof(DataMemberAttribute)) as DataMemberAttribute;
 			if (dataMemberAttribute != null && !string.IsNullOrEmpty(dataMemberAttribute.Name))
 				return dataMemberAttribute.Name;
+			
 			return propertyInfo.Name;
 		}
 		protected object LoadEntityValue(object o, PropertyInfo f, object v)

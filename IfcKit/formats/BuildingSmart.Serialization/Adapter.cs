@@ -29,9 +29,9 @@ namespace BuildingSmart.Serialization
 			return this.GetNonAbstractTypeByName(type);
 		}
 
-		public IList<PropertyInfo> GetDirectFields(Type t)
+		public IEnumerable<PropertyInfo> GetDirectFields(Type t)
 		{
-			return this.GetFieldsOrdered(t);
+			return this.GetFieldsOrdered(t).Select(x=>x.Value);
 		}
 
 		public IList<PropertyInfo> GetInverseFields(Type t)

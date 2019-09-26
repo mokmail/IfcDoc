@@ -117,7 +117,7 @@ namespace BuildingSmart.Serialization.Xml
 			if (string.IsNullOrEmpty(typename))
 			{
 				typename = reader.LocalName;
-				if(string.IsNullOrEmpty(typename))
+				if (string.IsNullOrEmpty(typename))
 				{
 					reader.Read();
 					while (reader.NodeType == XmlNodeType.Whitespace || reader.NodeType == XmlNodeType.Comment)
@@ -167,7 +167,7 @@ namespace BuildingSmart.Serialization.Xml
 			Type t = null;
 			if (string.Compare(typename, "header", true) == 0)
 				t = typeof(headerData);
-			else if(!string.IsNullOrEmpty(typename))
+			else if (!string.IsNullOrEmpty(typename))
 			{
 				t = GetTypeByName(typename);
 				if (!string.IsNullOrEmpty(reader.LocalName) && string.Compare(reader.LocalName, typename) != 0)
@@ -178,19 +178,21 @@ namespace BuildingSmart.Serialization.Xml
 				}
 			}
 			string r = reader.GetAttribute("href");
+			if (string.IsNullOrEmpty(r))
+				r = reader.GetAttribute("ref");
 			if (!string.IsNullOrEmpty(r))
 			{
 				object value = null;
 				if (instances.TryGetValue(r, out value))
 				{
-			//System.Diagnostics.Debug.WriteLine(new string(' ', indent) + "vvReadEntity: " + readerLocalName + " " + (parent == null ? "" : parent.GetType().Name + "." + propInfo.Name));
+					//System.Diagnostics.Debug.WriteLine(new string(' ', indent) + "vvReadEntity: " + readerLocalName + " " + (parent == null ? "" : parent.GetType().Name + "." + propInfo.Name));
 					return LoadEntityValue(parent, propInfo, value);
 				}
 				queuedObjects.Queue(r, parent, propInfo);
-			//System.Diagnostics.Debug.WriteLine(new string(' ', indent) + "AAReadEntity: " + readerLocalName + " " + (parent == null ? "" : parent.GetType().Name + "." + propInfo.Name));
+				//System.Diagnostics.Debug.WriteLine(new string(' ', indent) + "AAReadEntity: " + readerLocalName + " " + (parent == null ? "" : parent.GetType().Name + "." + propInfo.Name));
 				return null;
 			}
-			if(t == null || t.IsValueType)
+			if (t == null || t.IsValueType)
 			{
 				if (!reader.IsEmptyElement)
 				{
@@ -215,7 +217,7 @@ namespace BuildingSmart.Serialization.Xml
 								{
 									ReadValue(reader, parent, propInfo, t);
 								}
-					//System.Diagnostics.Debug.WriteLine(new string(' ', indent) + "##ReadEntity: " + readerLocalName + " " + reader.LocalName + " " + reader.NodeType);
+								//System.Diagnostics.Debug.WriteLine(new string(' ', indent) + "##ReadEntity: " + readerLocalName + " " + reader.LocalName + " " + reader.NodeType);
 								return null;
 						}
 					}
@@ -248,7 +250,7 @@ namespace BuildingSmart.Serialization.Xml
 				}
 				// map instance id if used later
 				string sid = reader.GetAttribute("id");
-				
+
 				if (t == this.ProjectType || t.IsSubclassOf(this.ProjectType))
 				{
 					if (!instances.TryGetValue(String.Empty, out entity))
@@ -299,7 +301,7 @@ namespace BuildingSmart.Serialization.Xml
 						{
 							string match = reader.LocalName;
 							PropertyInfo f = GetFieldByName(t, match);
-							if(f != null)
+							if (f != null)
 								ReadValue(reader, entity, f, f.PropertyType);
 						}
 					}
@@ -378,7 +380,7 @@ namespace BuildingSmart.Serialization.Xml
 									nestedTypeName = nestedType.Name;
 								}
 
-								ReadEntity(reader, localEntity, nestedPropInfo, instances, nestedTypeName, queuedObjects, nested, indent+1);
+								ReadEntity(reader, useParent ? parent : localEntity, nestedPropInfo, instances, nestedTypeName, queuedObjects, nested, indent+1);
 							}
 							break;
 						}
@@ -551,6 +553,12 @@ namespace BuildingSmart.Serialization.Xml
 			{
 				// STRING
 				value = Regex.Replace(readervalue, "(?<!\r)\n", "\r\n"); 
+			}
+			else if (typeof(Guid) == type)
+			{
+				Guid result = Guid.Empty;
+				if (Guid.TryParse(readervalue, out result))
+					return result;
 			}
 			else if (typeof(DateTime) == type)
 			{
@@ -922,14 +930,15 @@ namespace BuildingSmart.Serialization.Xml
 			bool previousattribute = false;
 
 			// write fields as attributes
-			IList<PropertyInfo> fields = this.GetFieldsOrdered(t);
-			List<Tuple<PropertyInfo, DataMemberAttribute, object>> elementFields = new List<Tuple<PropertyInfo, DataMemberAttribute, object>>();
-			foreach (PropertyInfo f in fields)
+			IList<KeyValuePair<string, PropertyInfo>> fields = this.GetFieldsOrdered(t);
+			List<Tuple<KeyValuePair<string, PropertyInfo>, DataMemberAttribute, object>> elementFields = new List<Tuple<KeyValuePair<string, PropertyInfo>, DataMemberAttribute, object>>();
+			foreach (KeyValuePair<string, PropertyInfo> pair in fields)
 			{
-				if (f != null) // derived fields are null
+				if (pair.Value != null) // derived fields are null
 				{
-					if (propertiesToIgnore.Contains(f.Name))
+					if (propertiesToIgnore.Contains(pair.Key))
 						continue;
+					PropertyInfo f = pair.Value;
 					DocXsdFormatEnum? xsdformat = this.GetXsdFormat(f);
 					if (xsdformat == DocXsdFormatEnum.Hidden)
 						continue;
@@ -958,7 +967,7 @@ namespace BuildingSmart.Serialization.Xml
 							}
 
 							previousattribute = true;
-							this.WriteStartAttribute(writer, indent, f.Name);
+							this.WriteStartAttribute(writer, indent, pair.Key);
 
 							if (isvaluelistlist)
 							{
@@ -1092,12 +1101,12 @@ namespace BuildingSmart.Serialization.Xml
 						}
 						else
 						{
-							elementFields.Add(new Tuple<PropertyInfo, DataMemberAttribute, object>(f, dataMemberAttribute, value));
+							elementFields.Add(new Tuple<KeyValuePair<string, PropertyInfo>, DataMemberAttribute, object>(pair, dataMemberAttribute, value));
 						}
 					}
 					else
 					{
-						elementFields.Add(new Tuple<PropertyInfo, DataMemberAttribute, object>(f, dataMemberAttribute, value));
+						elementFields.Add(new Tuple<KeyValuePair<string, PropertyInfo>, DataMemberAttribute, object>(pair, dataMemberAttribute, value));
 					}
 				}
 			}
@@ -1106,9 +1115,9 @@ namespace BuildingSmart.Serialization.Xml
 			if (elementFields.Count > 0)
 			{
 				// write direct object references and lists
-				foreach (Tuple<PropertyInfo, DataMemberAttribute, object> tuple in elementFields) // derived attributes are null
+				foreach (Tuple<KeyValuePair<string, PropertyInfo>, DataMemberAttribute, object> tuple in elementFields) // derived attributes are null
 				{
-					PropertyInfo f = tuple.Item1;
+					PropertyInfo f = tuple.Item1.Value;
 					Type ft = f.PropertyType;
 					bool isvaluelist = IsValueCollection(ft);
 					bool isvaluelistlist = ft.IsGenericType && // e.g. IfcTriangulatedFaceSet.Normals
@@ -1125,7 +1134,7 @@ namespace BuildingSmart.Serialization.Xml
 						{
 							if (!ft.IsValueType && !isvaluelist && !isvaluelistlist)
 							{
-								string fieldName = PropertySerializeName(f), fieldTypeName = TypeSerializeName(ft);
+								string fieldName = tuple.Item1.Key, fieldTypeName = TypeSerializeName(ft);
 								if (!open)
 								{
 									WriteOpenElement(writer);
@@ -1172,7 +1181,7 @@ namespace BuildingSmart.Serialization.Xml
 								IEnumerable ienumerable = value as IEnumerable;
 								if (ienumerable == null)
 								{
-									string fieldName = PropertySerializeName(f), fieldTypeName = TypeSerializeName(ft);
+									string fieldName = tuple.Item1.Key, fieldTypeName = TypeSerializeName(ft);
 									if (string.Compare(fieldName, fieldTypeName) == 0)
 									{
 										if (!open)
@@ -1826,7 +1835,7 @@ namespace BuildingSmart.Serialization.Xml
 				Type objectType = o.GetType();
 				if(objectType == baseType || objectType.IsSubclassOf(baseType))
 					objects.Add(o);
-				IList<PropertyInfo> fields = GetFieldsOrdered(o.GetType());
+				IEnumerable<PropertyInfo> fields = GetFieldsOrdered(o.GetType()).Select(x=>x.Value);
 				foreach(PropertyInfo field in fields)
 				{
 					if (field == null)

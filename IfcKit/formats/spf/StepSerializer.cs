@@ -247,7 +247,7 @@ namespace BuildingSmart.Serialization.Step
 			else
 			{
 
-				IList<PropertyInfo> fields = this.GetFieldsOrdered(t);
+				IList<PropertyInfo> fields = this.GetFieldsOrdered(t).Select(x=>x.Value).ToList();
 				for (int iField = 0; iField < fields.Count; iField++)
 				{
 					if (iField != 0)
@@ -1076,7 +1076,7 @@ namespace BuildingSmart.Serialization.Step
 		{
 			Type t = instance.GetType();
 
-			IList<PropertyInfo> fields = this.GetFieldsOrdered(t);
+			IList<PropertyInfo> fields = this.GetFieldsOrdered(t).Select(x=>x.Value).ToList();
 			if (fields.Count == 0)
 			{
 				PropertyInfo f = t.GetProperty("Value"); //!!!!!REFACTOR: MUST USE FIELD!!!! -- no property encoding....
@@ -1183,23 +1183,23 @@ namespace BuildingSmart.Serialization.Step
 
 			// assign the value
 			object value = null;
-			try
+			if (field.PropertyType == typeof(object))
+				value = strval;
+			else
 			{
-				value = ParseValue(field.PropertyType, strval, idmap);
-			}
-			catch (Exception e)
-			{
-				// e.g. null value for list
-				System.Diagnostics.Debug.WriteLine("StepSerializer: " + e.Message);
+				try
+				{
+					value = ParseValue(field.PropertyType, strval, idmap);
+				}
+				catch (Exception e)
+				{
+					// e.g. null value for list
+					System.Diagnostics.Debug.WriteLine("StepSerializer: " + e.Message);
+				}
 			}
 
 			if (value != null && field.PropertyType.IsInstanceOfType(value))
 			{
-				if (strval.Length > 2 && field.Name.Equals("Rules") && field.DeclaringType.Name.Equals("DocModelRule"))
-				{
-					field.ToString();
-				}
-
 				LoadEntityValue(instance, field, value);
 
 				//... todo: use generated code for specialized collections to keep inverse properties in sync...
@@ -1366,7 +1366,11 @@ namespace BuildingSmart.Serialization.Step
 						strType = strType.Trim();
 
 						Type t = this.GetNonAbstractTypeByName(strType);
-						if (t != null)
+						if (t == null)
+						{
+							System.Diagnostics.Debug.WriteLine("Unrecognized entity " + strType);
+						}
+						else
 						{
 							object o = FormatterServices.GetUninitializedObject(t); // works if no parameterless constructor is defined
 																					// capture project
@@ -1374,7 +1378,7 @@ namespace BuildingSmart.Serialization.Step
 								idmap.Add(0, o);
 							idmap.Add(id, o);
 							// populate collections (catch case of older version where field may not be asserted)
-							IList<PropertyInfo> listProp = GetFieldsAll(t);
+							IEnumerable<PropertyInfo> listProp = GetFieldsAll(t).Select(x=>x.Value);
 							foreach (PropertyInfo prop in listProp)
 							{
 								Type type = prop.PropertyType;

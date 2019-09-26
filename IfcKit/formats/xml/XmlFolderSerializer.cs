@@ -111,9 +111,10 @@ namespace BuildingSmart.Serialization.Xml
 			HashSet<string> nestedProperties = new HashSet<string>();
 
 			List<Tuple<string, object, bool>> queued = new List<Tuple<string, object, bool>>();
-			IList<PropertyInfo> fields = this.GetFieldsOrdered(objectType);
-			foreach (PropertyInfo propertyInfo in fields)
+			IList<KeyValuePair<string, PropertyInfo>> fields = this.GetFieldsOrdered(objectType);
+			foreach (KeyValuePair<string, PropertyInfo> pair in fields)
 			{
+				PropertyInfo propertyInfo = pair.Value;
 				if (propertyInfo == null)
 					continue;
 				Type propertyType = propertyInfo.PropertyType;

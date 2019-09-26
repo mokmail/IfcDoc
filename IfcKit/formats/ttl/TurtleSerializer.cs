@@ -33,7 +33,7 @@ namespace BuildingSmart.Serialization.Turtle
 			foreach (Type t in this.GetTypes())
 			{
 				Type docClass = t;
-				IList<PropertyInfo> listFields = GetFieldsOrdered(docClass);
+				IEnumerable<PropertyInfo> listFields = GetFieldsOrdered(docClass).Select(x=>x.Value);
 				foreach (PropertyInfo fieldInfo in listFields)
 				{
 					string row0 = docClass.Name;
@@ -241,7 +241,7 @@ namespace BuildingSmart.Serialization.Turtle
 		{
 			Type t = o.GetType();
 
-			IList<PropertyInfo> fields = this.GetFieldsOrdered(t);
+			IEnumerable<PropertyInfo> fields = this.GetFieldsOrdered(t).Select(x=>x.Value);
 			foreach (PropertyInfo f in fields)
 			{
 				object v = f.GetValue(o);

@@ -29,9 +29,9 @@ namespace BuildingSmart.Serialization
 		Dictionary<string, Type> _typemap = new Dictionary<string, Type>();
 		Dictionary<string, Type> _abstractTypeMap = new Dictionary<string, Type>();
 
-		Dictionary<Type, IList<PropertyInfo>> _fieldmap = new Dictionary<Type, IList<PropertyInfo>>(); // cached field lists in declaration order
+		Dictionary<Type, IList<KeyValuePair<string, PropertyInfo>>> _fieldmap = new Dictionary<Type, IList<KeyValuePair<string, PropertyInfo>>>(); // cached field lists in declaration order
 		Dictionary<Type, IList<PropertyInfo>> _fieldinv = new Dictionary<Type, IList<PropertyInfo>>(); // cached field lists for inverses
-		Dictionary<Type, IList<PropertyInfo>> _fieldall = new Dictionary<Type, IList<PropertyInfo>>(); // combined
+		Dictionary<Type, IList<KeyValuePair<string, PropertyInfo>>> _fieldall = new Dictionary<Type, IList<KeyValuePair<string, PropertyInfo>>>(); // combined
 		Dictionary<int, List<PropertyInfo>> _inversemap = new Dictionary<int, List<PropertyInfo>>();
 		Dictionary<Type, MethodInfo> _deserializingmap = new Dictionary<Type, MethodInfo>(); // cached field lists in declaration order
 
@@ -152,6 +152,8 @@ namespace BuildingSmart.Serialization
 							typeElement = fTarget.PropertyType;
 						}
 
+						if (typeElement.BaseType == null)
+							continue;
 						PropertyInfo fSource = this.GetFieldByName(typeElement, attrs[0].Property); // dictionary requires reference uniqueness
 						if (fSource != null)
 						{
@@ -180,6 +182,11 @@ namespace BuildingSmart.Serialization
 						if (!_typemap.ContainsKey(name))
 						{
 							_typemap.Add(name, t);
+						}
+						XmlTypeAttribute xmlType = t.GetCustomAttribute<XmlTypeAttribute>();
+						if(xmlType != null && !string.IsNullOrEmpty(xmlType.TypeName) && !_typemap.ContainsKey(xmlType.TypeName))
+						{
+							_typemap.Add(xmlType.TypeName, t);
 						}
 					}
 				}
@@ -355,11 +362,11 @@ namespace BuildingSmart.Serialization
 		/// <returns></returns>
 		protected PropertyInfo GetFieldByName(Type type, string name)
 		{
-			IList<PropertyInfo> fields = this.GetFieldsOrdered(type);
-			foreach (PropertyInfo field in fields)
+			IList<KeyValuePair<string, PropertyInfo>> fields = this.GetFieldsOrdered(type);
+			foreach (KeyValuePair<string, PropertyInfo> field in fields)
 			{
-				if (field != null && field.Name.Equals(name))
-					return field;
+				if (field.Value != null && field.Key.Equals(name))
+					return field.Value;
 			}
 
 			return null;
@@ -394,15 +401,15 @@ namespace BuildingSmart.Serialization
 			return null;
 		}
 
-		protected IList<PropertyInfo> GetFieldsAll(Type type)
+		protected IList<KeyValuePair<string, PropertyInfo>> GetFieldsAll(Type type)
 		{
-			IList<PropertyInfo> fields = null;
+			IList<KeyValuePair<string, PropertyInfo>> fields = null;
 			if (_fieldall.TryGetValue(type, out fields))
 			{
 				return fields;
 			}
 
-			fields = new List<PropertyInfo>();
+			fields = new List<KeyValuePair<string, PropertyInfo>>();
 			BuildFieldList(type, fields, true, true);
 			_fieldall.Add(type, fields);
 
@@ -414,15 +421,15 @@ namespace BuildingSmart.Serialization
 		/// </summary>
 		/// <param name="type"></param>
 		/// <returns></returns>
-		protected IList<PropertyInfo> GetFieldsOrdered(Type type)
+		protected IList<KeyValuePair<string, PropertyInfo>> GetFieldsOrdered(Type type)
 		{
-			IList<PropertyInfo> fields = null;
+			IList<KeyValuePair<string, PropertyInfo>> fields = null;
 			if (_fieldmap.TryGetValue(type, out fields))
 			{
 				return fields;
 			}
 
-			fields = new List<PropertyInfo>();
+			fields = new List<KeyValuePair<string, PropertyInfo>>();
 			BuildFieldList(type, fields, true, false);
 			_fieldmap.Add(type, fields);
 			return fields;
@@ -473,7 +480,7 @@ namespace BuildingSmart.Serialization
 		/// <param name="inherit"></param>
 		/// <param name="inverse"></param>
 		/// <param name="platform">Specific version, or UNSET to use default (latest)</param>
-		private void BuildFieldList(Type type, IList<PropertyInfo> list, bool inherit, bool inverse)
+		private void BuildFieldList(Type type, IList<KeyValuePair<string, PropertyInfo>> list, bool inherit, bool inverse)
 		{
 			if (inherit && type.BaseType != typeof(object) && type.BaseType != typeof(Serializer))
 			{
@@ -482,25 +489,28 @@ namespace BuildingSmart.Serialization
 				// zero-out any fields that are overridden as derived at subtype (e.g. IfcSIUnit.Dimensions)
 				for (int iField = 0; iField < list.Count; iField++)
 				{
-					PropertyInfo field = list[iField];
+					PropertyInfo field = list[iField].Value;
 					if (field != null)
 					{
 						PropertyInfo prop = type.GetProperty(field.Name.Substring(1), BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
 						if (prop != null)
 						{
-							list[iField] = null; // hide derived fields
+							list[iField] = new KeyValuePair<string, PropertyInfo>("", null); // hide derived fields
 						}
 					}
 				}
 			}
 
 			PropertyInfo[] fields = type.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-			PropertyInfo[] sorted = new PropertyInfo[fields.Length];
-			List<PropertyInfo> unorderedAttributes = new List<PropertyInfo>();
-			SortedList<int, PropertyInfo> orderedAttributes = new SortedList<int, PropertyInfo>();
+			KeyValuePair<string, PropertyInfo>[] sorted = new KeyValuePair<string, PropertyInfo>[fields.Length];
+			List<KeyValuePair<string, PropertyInfo>> unorderedAttributes = new List<KeyValuePair<string, PropertyInfo>>();
+			SortedList<int, KeyValuePair<string, PropertyInfo>> orderedAttributes = new SortedList<int, KeyValuePair<string, PropertyInfo>>();
 			foreach (PropertyInfo field in fields)
 			{
 				DataMemberAttribute dataMemberAttribute = field.GetCustomAttribute<DataMemberAttribute>();
+				KeyValuePair<string, PropertyInfo> pair = new KeyValuePair<string, PropertyInfo>(field.Name, field);
+				if (dataMemberAttribute != null && !string.IsNullOrEmpty(dataMemberAttribute.Name))
+					pair = new KeyValuePair<string, PropertyInfo>(dataMemberAttribute.Name, field);
 				if (_XmlAttributePriority)
 				{
 					XmlIgnoreAttribute xmlIgnoreAttribute = field.GetCustomAttribute<XmlIgnoreAttribute>();
@@ -509,42 +519,48 @@ namespace BuildingSmart.Serialization
 					XmlElementAttribute xmlElementAttribute = field.GetCustomAttribute<XmlElementAttribute>();
 					if (xmlElementAttribute != null)
 					{
+						if (!string.IsNullOrEmpty(xmlElementAttribute.ElementName))
+							pair = new KeyValuePair<string, PropertyInfo>(xmlElementAttribute.ElementName, pair.Value);
 						if (xmlElementAttribute.Order > -1 && xmlElementAttribute.Order < fields.Length)
 						{
-							sorted[xmlElementAttribute.Order] = field;
+							sorted[xmlElementAttribute.Order] = pair;
 							continue;
 						}
 						if (dataMemberAttribute == null)
 						{
-							unorderedAttributes.Add(field);
+							unorderedAttributes.Add(pair);
 							continue;
 						}
 					}
 					XmlAttributeAttribute xmlAttributeAttribute = field.GetCustomAttribute<XmlAttributeAttribute>();	
 					if(xmlAttributeAttribute != null)
 					{
+						if(!string.IsNullOrEmpty( xmlAttributeAttribute.AttributeName))
+							pair = new KeyValuePair<string, PropertyInfo>(xmlAttributeAttribute.AttributeName, pair.Value);
 						if (dataMemberAttribute != null && dataMemberAttribute.Order >= 0)
 						{
-							orderedAttributes.Add(dataMemberAttribute.Order, field);
+							orderedAttributes.Add(dataMemberAttribute.Order, pair);
 							continue;
 						}
 						if (dataMemberAttribute == null)
 						{
-							unorderedAttributes.Add(field);
+							unorderedAttributes.Add(pair);
 							continue;
 						}
 					}
 					XmlArrayAttribute xmlArrayAttribute = field.GetCustomAttribute<XmlArrayAttribute>();
 					if (xmlArrayAttribute != null)
 					{
+						if (!string.IsNullOrEmpty(xmlArrayAttribute.ElementName))
+							pair = new KeyValuePair<string, PropertyInfo>(xmlArrayAttribute.ElementName, pair.Value);
 						if (xmlArrayAttribute.Order > -1 && xmlArrayAttribute.Order < fields.Length)
 						{
-							sorted[xmlArrayAttribute.Order] = field;
+							sorted[xmlArrayAttribute.Order] = pair;
 							continue;
 						}
 						if (dataMemberAttribute == null)
 						{
-							unorderedAttributes.Add(field);
+							unorderedAttributes.Add(pair);
 							continue;
 						}
 					}
@@ -553,25 +569,25 @@ namespace BuildingSmart.Serialization
 				{
 					if (dataMemberAttribute.Order < fields.Length)
 					{
-						sorted[dataMemberAttribute.Order] = field;
+						sorted[dataMemberAttribute.Order] = pair;
 					}
 					else
 					{
-						unorderedAttributes.Add(field);
+						unorderedAttributes.Add(pair);
 					}
 				}
 			}
 
-			foreach (PropertyInfo sort in sorted)
+			foreach (KeyValuePair<string, PropertyInfo> sort in sorted)
 			{
-				if (sort != null)
+				if (sort.Value != null)
 				{
 					list.Add(sort);
 				}
 			}
-			foreach (PropertyInfo propertyInfo in orderedAttributes.Values)
+			foreach (KeyValuePair<string, PropertyInfo> propertyInfo in orderedAttributes.Values)
 				list.Add(propertyInfo);
-			foreach (PropertyInfo propertyInfo in unorderedAttributes)
+			foreach (KeyValuePair<string, PropertyInfo> propertyInfo in unorderedAttributes)
 				list.Add(propertyInfo);
 			// now inverse -- need particular order???
 			if (inverse)
@@ -581,7 +597,7 @@ namespace BuildingSmart.Serialization
 				{
 					if (field.IsDefined(typeof(InversePropertyAttribute), false))
 					{
-						list.Add(field);
+						list.Add(new KeyValuePair<string, PropertyInfo>(field.Name, field));
 					}
 				}
 			}

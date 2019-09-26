@@ -158,7 +158,7 @@ namespace BuildingSmart.Utilities.Conversion
 					bool firstTime;
 					long id = gen.GetId(o, out firstTime);
 
-					IList<PropertyInfo> fieldsDirect = this.m_adapterSource.GetDirectFields(oReplacement.GetType());
+					IEnumerable<PropertyInfo> fieldsDirect = this.m_adapterSource.GetDirectFields(oReplacement.GetType());
 					foreach (PropertyInfo field in fieldsDirect)
 					{
 						if (field != null && !field.PropertyType.IsValueType)
@@ -234,8 +234,8 @@ namespace BuildingSmart.Utilities.Conversion
 						source = o;
 					}
 
-					IList<PropertyInfo> fieldsSource = this.m_adapterSource.GetDirectFields(source.GetType());
-					IList<PropertyInfo> fieldsTarget = this.m_adapterTarget.GetDirectFields(target.GetType());
+					IList<PropertyInfo> fieldsSource = this.m_adapterSource.GetDirectFields(source.GetType()).ToList();
+					IList<PropertyInfo> fieldsTarget = this.m_adapterTarget.GetDirectFields(target.GetType()).ToList();
 					for (int iField = 0; iField < fieldsSource.Count && iField < fieldsTarget.Count; iField++)
 					{
 						PropertyInfo fieldSource = fieldsSource[iField];
