@@ -104,6 +104,11 @@ namespace IfcDoc.Schema.MVD
 	public abstract class Element : Identity
 	{
 		[DataMember(Order = 0)] [XmlArray(Order = 0)] public List<Definition> Definitions { get; set; }
+
+		public Element()
+		{
+			Definitions = new List<Definition>();
+		}
 	}
 
 	[XmlType("mvdXML")]
@@ -112,6 +117,11 @@ namespace IfcDoc.Schema.MVD
 		[DataMember(Order = 0)] [XmlArray(Order = 0)] public List<ConceptTemplate> Templates { get; set; }
 		[DataMember(Order = 1)] [XmlArray(Order = 1)] public List<ModelView> Views { get; set; }
 
+		public mvdXML()
+		{
+			Templates = new List<ConceptTemplate>();
+			Views = new List<ModelView>();
+		}
 		[XmlAttribute("schemaLocation", Namespace = "http://www.w3.org/2001/XMLSchema-instance")]
 		public string schemaLocation = LocationV11;
 
@@ -139,6 +149,12 @@ namespace IfcDoc.Schema.MVD
 		[DataMember(Order = 1), XmlAttribute("applicableEntity")] public string ApplicableEntity { get; set; }// was ApplicableEntities before final
 		[DataMember(Order = 2)] [XmlArray(Order = 0)] public List<AttributeRule> Rules { get; set; }// new in 2.5
 		[DataMember(Order = 3)] [XmlArray(Order = 1)] public List<ConceptTemplate> SubTemplates { get; set; }
+
+		public ConceptTemplate()
+		{
+			Rules = new List<AttributeRule>();
+			SubTemplates = new List<ConceptTemplate>();
+		}
 	}
 
 	// used to map xpath
@@ -159,10 +175,16 @@ namespace IfcDoc.Schema.MVD
 	{
 		[DataMember(Order = 0), XmlElement(Order = 0)] public TemplateRef Template { get; set; }// links to ConceptTemplate 
 		[DataMember(Order = 1), XmlArray(Order = 1)] public List<ConceptRequirement> Requirements { get; set; }
-		[DataMember(Order = 2), XmlArray(Order = 2)] public TemplateRules TemplateRules { get; set; }
+		[DataMember(Order = 2), XmlElement(Order = 2)] public TemplateRules TemplateRules { get; set; }
 		[DataMember(Order = 3), XmlArray(Order = 3)] public List<Concept> SubConcepts { get; set; }// added v3.8
 		[DataMember(Order = 4), XmlAttribute("override")] public bool Override { get; set; }// added in v5.6
-		[DataMember(Order = 5), XmlElement("baseConcept", Order = 3)] public BaseConcept BaseConcept { get; set; }
+		[DataMember(Order = 5), XmlElement("baseConcept", Order = 4)] public BaseConcept BaseConcept { get; set; }
+		
+		public Concept()
+		{
+			Requirements = new List<ConceptRequirement>();
+			SubConcepts = new List<Concept>();
+		}
 	}
 
 	// used to map xpath
@@ -204,6 +226,13 @@ namespace IfcDoc.Schema.MVD
 		[DataMember(Order = 2), XmlArray(Order = 2)] public List<ConceptRoot> Roots { get; set; }
 		[DataMember(Order = 3), XmlIgnore] public List<ModelView> Views { get; set; }//Ignore mvdxml1.1
 		[DataMember(Order = 4), XmlAttribute("applicableSchema")] public string ApplicableSchema { get; set; }
+
+		public ModelView()
+		{
+			ExchangeRequirements = new List<ExchangeRequirement>();
+			Roots = new List<ConceptRoot>();
+			Views = new List<ModelView>();
+		}
 	}
 
 	[XmlType("Definition")]
@@ -212,6 +241,12 @@ namespace IfcDoc.Schema.MVD
 		[DataMember(Order = 0), XmlElement("Body")] public List<Body> Body { get; set; }
 		[DataMember(Order = 1), XmlElement("Link")] public List<Link> Links { get; set; }
 		[DataMember(Order = 2), XmlAttribute("tags")] public string Tags { get; set; }
+		
+		public Definition()
+		{
+			Body = new List<Body>();
+			Links = new List<Link>();
+		}
 	}
 
 	public class Body : SEntity,
@@ -289,13 +324,18 @@ namespace IfcDoc.Schema.MVD
 		[DataMember(Order = 0), XmlElement(Order = 0)] public ApplicabilityRules Applicability { get; set; }
 		[DataMember(Order = 1), XmlAttribute("applicableRootEntity")] public string ApplicableRootEntity { get; set; }// e.g. 'IfcBeam'
 		[DataMember(Order = 2), XmlArray(Order = 1)] public List<Concept> Concepts { get; set; }// = new List<Concept>(); // really Concept but fixed according to sample data to get xml serializer working
+
+		public ConceptRoot()
+		{
+			Concepts = new List<Concept>();
+		}
 	}
 
 	[XmlType("ApplicabilityRules")]
 	public class ApplicabilityRules : Element
 	{
 		[DataMember(Order = 0), XmlElement(Order = 0)] public TemplateRef Template { get; set; }
-		[DataMember(Order = 1), XmlElement(Order = 0)] public TemplateRules TemplateRules { get; set; }
+		[DataMember(Order = 1), XmlElement(Order = 1)] public TemplateRules TemplateRules { get; set; }
 	}
 
 	[XmlType("AbstractRule")]
@@ -311,6 +351,12 @@ namespace IfcDoc.Schema.MVD
 		[DataMember(Order = 0), XmlAttribute("AttributeName")] public string AttributeName { get; set; }
 		[DataMember(Order = 1), XmlArray(Order = 0)] public List<EntityRule> EntityRules { get; set; }
 		[DataMember(Order = 2), XmlArray(Order = 1)] public List<Constraint> Constraints { get; set; }
+
+		public AttributeRule()
+		{
+			EntityRules = new List<EntityRule>();
+			Constraints = new List<Constraint>();
+		}
 	}
 
 	[XmlType("EntityRule")]
@@ -320,6 +366,12 @@ namespace IfcDoc.Schema.MVD
 		[DataMember(Order = 1)] public References References { get; set; }
 		[DataMember(Order = 2)] public List<AttributeRule> AttributeRules { get; set; }
 		[DataMember(Order = 3)] public List<Constraint> Constraints { get; set; }
+
+		public EntityRule()
+		{
+			AttributeRules = new List<AttributeRule>();
+			Constraints = new List<Constraint>();
+		}
 	}
 
 	[XmlType("References")]
@@ -327,6 +379,11 @@ namespace IfcDoc.Schema.MVD
 	{
 		[DataMember(Order = 0), XmlAttribute("IdPrefix")] public string IdPrefix { get; set; }
 		[DataMember(Order = 1), XmlElement(typeof(TemplateRef))] public List<TemplateRef> Template { get; set; }// MVDXML 1.1 -- links to concept templates defined on referenced entity
+
+		public References()
+		{
+			Template = new List<TemplateRef>();
+		}
 	}
 
 	[XmlType("Constraint")]
@@ -348,6 +405,11 @@ namespace IfcDoc.Schema.MVD
 		//[DataMember(Order = 1), XmlAttribute("Usage")] public TemplateRuleUsage Usage; // mvdxml 1.2
 		//[DataMember(Order = 2)] public List<ConceptRequirement> Requirements; // proposed for mvdxml 1.2
 		[DataMember(Order = 0), XmlIgnore] public List<Concept> References { get; set; }// proposed for mvdxml 1.2
+
+		public TemplateItem()
+		{
+			References = new List<Concept>();
+		}
 	}
 
 	public enum TemplateRuleUsage
@@ -366,6 +428,11 @@ namespace IfcDoc.Schema.MVD
 		[DataMember(Order = 0), XmlAttribute("operator")] public TemplateOperator Operator { get; set; }
 		[DataMember(Order = 1), XmlElement(typeof(TemplateRule))] public List<TemplateRule> TemplateRule { get; set; }
 		[DataMember(Order = 2), XmlElement(typeof(TemplateRules))] public TemplateRules InnerRules { get; set; }
+
+		public TemplateRules()
+		{
+			TemplateRule = new List<TemplateRule>();
+		}
 	}
 
 	public enum TemplateOperator // added in mvdXML 1.1d
