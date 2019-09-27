@@ -1488,13 +1488,14 @@ namespace IfcDoc.Format.PNG
 													g.DrawString(docDefRef.Name, font, Brushes.Black, rc, sf);
 												}
 
-												foreach (DocLine docSub in docDefRef.Tree)
+												if (docDefRef.Tree != null)
 												{
-													DrawTree(g, docSub, Factor, Point.Empty, format);
+													foreach (DocLine docSub in docDefRef.Tree)
+													{
+														DrawTree(g, docSub, Factor, Point.Empty, format);
+													}
 												}
-
 											}
-
 										}
 									}
 								}

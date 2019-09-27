@@ -79,7 +79,7 @@ namespace IfcDoc.Schema.DOC
 		[DataMember(Order = 0)] [XmlAttribute] public string Locale { get; set; } 
 		[DataMember(Order = 1)] [XmlAttribute] public DocCategoryEnum Category { get; set; }
 		// localized name if locale provided, or system identifier (e.g. guid) used for bsDD
-		[DataMember(Order = 2)] public string Name { get; set; }
+		[DataMember(Order = 2), XmlAttribute] public string Name { get; set; }
 		[DataMember(Order = 3)] [XmlElement] [FileExtensions(Extensions = ".md"), DataType(DataType.MultilineText)] public string Documentation { get; set; }
 		[DataMember(Order = 4)] [XmlAttribute] public string URL { get; set; } // URL of remote system, e.g. http://bsdd.buildingsmart.org or http://test.bsdd.buildingsmart.org
 
@@ -2948,6 +2948,13 @@ namespace IfcDoc.Schema.DOC
 			foreach (DocTemplateDefinition t in Templates)
 				t.SortTemplate();
 		}
+		internal void setRuleIds()
+		{
+			foreach (DocModelRule rule in Rules)
+				rule.setIdNew();
+			foreach (DocTemplateDefinition templateDefinition in Templates)
+				templateDefinition.setRuleIds();
+		}
 	}
 
 	// this is kept as single structure (rather than on ConceptRoot) such that all formatting info can be easily accessed in one place, and not comingle usage of concepts
@@ -3290,7 +3297,47 @@ namespace IfcDoc.Schema.DOC
 
 		}
 
-
+		internal void setIdNew()
+		{
+			foreach (DocModelRule rule in Rules)
+			{
+				DocModelRuleConstraint constraint = rule as DocModelRuleConstraint;
+				if (constraint != null)
+				{
+					DocOpStatement statement = constraint.Expression as DocOpStatement;
+					if (statement != null)
+					{
+						DocModelRuleEntity docModelRuleEntity = statement.Reference.EntityRule as DocModelRuleEntity;
+						if (docModelRuleEntity != null && string.IsNullOrEmpty(docModelRuleEntity.UniqueId))
+						{
+							docModelRuleEntity.UniqueId = Guid.NewGuid().ToString();
+						}
+					}
+				}
+				rule.setIdNew();
+			}
+		}
+		internal void setId(string uniqueStr)
+		{
+			string str = uniqueStr + "_" +( string.IsNullOrEmpty(Name) ? "" : Name);
+			foreach(DocModelRule rule in Rules)
+			{
+				DocModelRuleConstraint constraint = rule as DocModelRuleConstraint;
+				if(constraint != null)
+				{
+					DocOpStatement statement = constraint.Expression as DocOpStatement;
+					if(statement != null)
+					{
+						DocModelRuleEntity docModelRuleEntity = statement.Reference.EntityRule as DocModelRuleEntity;
+						if(docModelRuleEntity != null && string.IsNullOrEmpty(docModelRuleEntity.UniqueId))
+						{
+							docModelRuleEntity.UniqueId = GlobalId.HashGuid(str + "_" + constraint.Name).ToString();
+						}
+					}
+				}
+				rule.setId(str);
+			}
+		}
 		internal virtual void RenameDefinition(DocSchema docSchema, DocDefinition docDefinition, DocAttribute docAttribute, string newname)
 		{
 			// recurse
@@ -3707,9 +3754,9 @@ namespace IfcDoc.Schema.DOC
 	{
 		[DataMember(Order = 0)] [XmlArray] public List<DocTemplateDefinition> References { get; protected set; } // IfcDoc 6.3: references to chained templates
 		[DataMember(Order = 1)] [XmlAttribute] public string Prefix { get; set; }
-		[DataMember(Order = 2)] [XmlAttribute] public string UniqueId { get; set; } = Guid.NewGuid().ToString(); // V12.2 inserted
+		[DataMember(Order = 2)] [XmlAttribute] public string UniqueId { get; set; } // V12.2 inserted
 
-		[IgnoreDataMember] public string id { get { return UniqueId; } }
+		[IgnoreDataMember] [XmlIgnore] public string id { get { return (string.IsNullOrEmpty(Name) ? "" : Name + "_") + GlobalId.Format(GlobalId.Parse(UniqueId));  } }
 
 		public DocModelRuleEntity()
 		{
@@ -5509,7 +5556,7 @@ namespace IfcDoc.Schema.DOC
 		[DataMember(Order = 4)] [XmlAttribute] public bool Calculated { get; set; } // IfcDoc 11.2 (changed from obsolete string): item is managed by system - should not be touched by user
 		[DataMember(Order = 5)] [XmlAttribute] public string RuleInstanceID { get; set; } // IfcDoc 2.5: id of the entity rule to instantiate for each item
 		[DataMember(Order = 6)] [XmlAttribute] public string RuleParameters { get; set; } // IfcDoc 2.5: parameters and constraints to substitute into the rule
-		[DataMember(Order = 7)] [XmlAttribute] public int Order { get; set; } // IfcDoc 11.6
+		[DataMember(Order = 7), XmlAttribute, Required] public int Order { get; set; } // IfcDoc 11.6
 		[DataMember(Order = 8)] [XmlArray] public List<DocExchangeItem> Exchanges { get; protected set; } // IfcDoc 11.6: override requirements for individual item 
 		// new in 8.5
 		private Dictionary<object, bool> _validateStructure; // 
@@ -6098,7 +6145,7 @@ namespace IfcDoc.Schema.DOC
 	public class DocDefinitionRef : DocDefinition, // new in v4.9
 		IDocTreeHost
 	{
-		[DataMember(Order = 0)] [XmlArray] public List<DocLine> Tree { get; protected set; } // new in 5.8 -- tree for subclasses
+		[DataMember(Order = 0)] [XmlIgnore] public List<DocLine> Tree { get; protected set; } // new in 5.8 -- tree for subclasses
 		[DataMember(Order = 1)] [XmlArray] public List<DocAttributeRef> AttributeRefs { get; protected set; } // new in V11.6: attribute on referenced entity
 
 		public DocDefinitionRef()
@@ -6106,6 +6153,7 @@ namespace IfcDoc.Schema.DOC
 			this.Tree = new List<DocLine>();
 			this.AttributeRefs = new List<DocAttributeRef>();
 		}
+		public void InitializeTree() { Tree = new List<DocLine>(); }
 	}
 
 	/// <summary>
@@ -6128,13 +6176,13 @@ namespace IfcDoc.Schema.DOC
 		[DataMember(Order = 4)] [XmlArray(Order = 6)] [XmlArrayItem(NestingLevel = 1)] public List<DocGlobalRule> GlobalRules { get; protected set; }   // 5.1.5 Global Rules    // inserted in 1.2
 		[DataMember(Order = 5)] [XmlArray(Order = 7)] [XmlArrayItem(NestingLevel = 1)] public List<DocPropertySet> PropertySets { get; protected set; } // 5.1.6 Property Sets
 		[DataMember(Order = 6)] [XmlArray(Order = 8)] [XmlArrayItem(NestingLevel = 1)] public List<DocQuantitySet> QuantitySets { get; protected set; } // 5.1.7 Quantity Sets
-		[DataMember(Order = 7)] [XmlArray(Order = 9)] public List<DocPageTarget> PageTargets { get; protected set; }   // inserted in 3.5, renamed to DocPageTarget in 4.9
+		[DataMember(Order = 7)] [XmlIgnore] public List<DocPageTarget> PageTargets { get; protected set; }  // inserted in 3.5, renamed to DocPageTarget in 4.9
 		[DataMember(Order = 8)] [XmlArray(Order = 0)] public List<DocSchemaRef> SchemaRefs { get; protected set; }     // inserted in 4.9
-		[DataMember(Order = 9)] [XmlArray(Order = 10)] public List<DocComment> Comments { get; protected set; }         // inserted in 4.9
+		[DataMember(Order = 9)] [XmlIgnore] public List<DocComment> Comments { get; protected set; } = new List<DocComment>();         // inserted in 4.9
 		[DataMember(Order = 10)] [Obsolete] [XmlIgnore] public List<DocPropertyEnumeration> PropertyEnumerations { get; protected set; } // inserted in 5.8, relocated to DocProject 12.1
 		[DataMember(Order = 11)] [XmlArray(Order = 1)] [XmlArrayItem(NestingLevel = 1)] public List<DocPrimitive> Primitives { get; protected set; }    // inserted in 5.8
-		[DataMember(Order = 12)] [XmlAttribute] public int DiagramPagesHorz { get; set; } // inserted in 5.8
-		[DataMember(Order = 13)] [XmlAttribute] public int DiagramPagesVert { get; set; } // inserted in 5.8
+		[DataMember(Order = 12)] [XmlIgnore] public int DiagramPagesHorz { get; set; } // inserted in 5.8
+		[DataMember(Order = 13)] [XmlIgnore] public int DiagramPagesVert { get; set; } // inserted in 5.8
 		
 		public DocSchema()
 		{
@@ -6366,6 +6414,13 @@ namespace IfcDoc.Schema.DOC
 			return docFunction;
 		}
 
+		internal void initialize()
+		{
+			if (PageTargets == null)
+				PageTargets = new List<DocPageTarget>();
+			if (Comments == null)
+				Comments = new List<DocComment>();
+		}
 		/// <summary>
 		/// Updates page numbers for all definitions within schema
 		/// </summary>
@@ -6654,8 +6709,8 @@ namespace IfcDoc.Schema.DOC
 	/// </summary>
 	public abstract class DocDefinition : DocObject
 	{
-		[DataMember(Order = 0)] [XmlElement] public DocRectangle DiagramRectangle { get; set; } // replaces template status (Integer) in v3.5
-		[DataMember(Order = 1)] [XmlAttribute] public int DiagramNumber { get; set; } // used to determine hyperlink to EXPRESS-G diagram [inserted in v1.2]        
+		[DataMember(Order = 0)] [XmlIgnore] public DocRectangle DiagramRectangle { get; set; } // replaces template status (Integer) in v3.5
+		[DataMember(Order = 1)] [XmlIgnore] public int DiagramNumber { get; set; } // used to determine hyperlink to EXPRESS-G diagram [inserted in v1.2]        
 
 		private Type m_runtimetype; // corresponding compiled type
 
@@ -6722,17 +6777,17 @@ namespace IfcDoc.Schema.DOC
 		IDocTreeHost
 	{
 		[DataMember(Order = 0)] [XmlAttribute] public string BaseDefinition { get; set; } // string base type
-		[DataMember(Order = 1)] [XmlAttribute] public int EntityFlags { get; set; }
-		[DataMember(Order = 2)] [XmlArray] public List<DocSubtype> Subtypes { get; protected set; } // flat list of subtypes (regardless of diagram tree)
-		[DataMember(Order = 3)] [XmlArray] public List<DocAttribute> Attributes { get; protected set; }
-		[DataMember(Order = 4)] [XmlArray] public List<DocUniqueRule> UniqueRules { get; protected set; }
-		[DataMember(Order = 5)] [XmlArray] public List<DocWhereRule> WhereRules { get; protected set; }
-		[DataMember(Order = 6), Obsolete] private List<DocTemplateUsage> _Templates { get; set; } // to be deprecated -- use ModelView.ConceptRoots[].Concepts
+		[DataMember(Order = 1), XmlAttribute, Required] public int EntityFlags { get; set; }
+		[DataMember(Order = 2)] [XmlArray(Order = 0)] public List<DocSubtype> Subtypes { get; protected set; } // flat list of subtypes (regardless of diagram tree)
+		[DataMember(Order = 3)] [XmlArray(Order = 1)] public List<DocAttribute> Attributes { get; protected set; }
+		[DataMember(Order = 4)] [XmlArray(Order = 2)] public List<DocUniqueRule> UniqueRules { get; protected set; }
+		[DataMember(Order = 5)] [XmlArray(Order = 3)] public List<DocWhereRule> WhereRules { get; protected set; }
+		[DataMember(Order = 6), Obsolete, XmlIgnore] private List<DocTemplateUsage> _Templates { get; set; } // to be deprecated -- use ModelView.ConceptRoots[].Concepts
 		//[DataMember(Order = 7), Obsolete]
 		//private string _Description { get; set; } // 2.7 -- holds Body description from MVD-XML for which documentation is generated; 5.3 deprecated
 		[DataMember(Order = 7)] [XmlAttribute] private string DefaultMember { get; set; } // 12.0: identifies attribute used for identifying object, e.g. IfcRepresentation.RepresentationIdentifier -- DefaultMember in C#
-		[DataMember(Order = 8), Obsolete] private List<DocPoint> _DiagramLine { get; set; } // 3.5 -- line to tree of subtypes - removed in V5.8
-		[DataMember(Order = 9)] [XmlArray] public List<DocLine> Tree { get; protected set; } // 5.8 -- tree of lines and subtypes for diagram rendering
+		[DataMember(Order = 8), Obsolete, XmlIgnore] private List<DocPoint> _DiagramLine { get; set; } // 3.5 -- line to tree of subtypes - removed in V5.8
+		[DataMember(Order = 9)] [XmlIgnore] public List<DocLine> Tree { get; protected set; } // 5.8 -- tree of lines and subtypes for diagram rendering
 
 		internal bool _InheritanceDiagramFlag;
 
@@ -6786,7 +6841,7 @@ namespace IfcDoc.Schema.DOC
 
 			return sb.ToString();
 		}
-
+		public void InitializeTree() { Tree = new List<DocLine>(); }
 		public bool IsAbstract
 		{
 			get
@@ -6971,16 +7026,16 @@ namespace IfcDoc.Schema.DOC
 	{
 		[DataMember(Order = 0)] [XmlAttribute] public string DefinedType { get; set; } // the EXPRESS type (bypassing any indirection from page references, etc.)
 		[DataMember(Order = 1)] [XmlIgnore] public DocDefinition Definition { get; set; } // the EXPRESS-G link -- never used until 5.8 -- holds EXPRESS-G target; renamed from "ReferencedType"
-		[DataMember(Order = 2)] [XmlAttribute] public int AttributeFlags { get; set; }
-		[DataMember(Order = 3)] [XmlAttribute] public int AggregationType { get; set; } 
-		[DataMember(Order = 4)] [XmlAttribute] public int AggregationFlag { get; set; } // inserted
+		[DataMember(Order = 2), XmlAttribute, Required] public int AttributeFlags { get; set; }
+		[DataMember(Order = 3), XmlAttribute, Required] public int AggregationType { get; set; } 
+		[DataMember(Order = 4), XmlAttribute, Required] public int AggregationFlag { get; set; } // inserted
 		[DataMember(Order = 5)] [XmlAttribute] public string AggregationLower { get; set; } // was int (changed for VEX in v2.0)
 		[DataMember(Order = 6)] [XmlAttribute] public string AggregationUpper { get; set; } // was int (changed for VEX in v2.0)
 		[DataMember(Order = 7)] [XmlAttribute] public string Inverse { get; set; }
 		[DataMember(Order = 8)] [XmlElement] public string Derived { get; set; }
 		[DataMember(Order = 9)] [XmlElement] public DocAttribute AggregationAttribute { get; set; } // nested aggregations
-		[DataMember(Order = 10)] [XmlArray] public List<DocPoint> DiagramLine { get; protected set; } // line coordinates
-		[DataMember(Order = 11)] [XmlElement] public DocRectangle DiagramLabel { get; set; } // position of label
+		[DataMember(Order = 10)] [XmlIgnore] public List<DocPoint> DiagramLine { get; protected set; } // line coordinates
+		[DataMember(Order = 11)] [XmlIgnore] public DocRectangle DiagramLabel { get; set; } // position of label
 		[DataMember(Order = 12, IsRequired = false)] [XmlAttribute] public DocXsdFormatEnum XsdFormat { get; set; }  // NEW in IfcDoc 4.9f: tag behavior
 		[DataMember(Order = 13)] [XmlAttribute] public bool? XsdTagless { get; set; } // NEW in IfcDoc 5.0b: tagless; 8.7: NULLABLE
 
@@ -7184,7 +7239,7 @@ namespace IfcDoc.Schema.DOC
 		[DataMember(Order = 2)] [XmlArray] public List<DocWhereRule> WhereRules { get; protected set; }
 		[DataMember(Order = 3)] [XmlAttribute] public int Length { get; set; } // e.g. length of string        
 		[DataMember(Order = 4)] [XmlElement] public DocAttribute Aggregation { get; set; } // added V1.8, 2011-02-22
-		[DataMember(Order = 5)] [XmlArray] public List<DocPoint> DiagramLine { get; protected set; } // added V5.8
+		[DataMember(Order = 5)] [XmlIgnore] public List<DocPoint> DiagramLine { get; protected set; } // added V5.8
 
 		public DocDefined()
 		{
@@ -7200,13 +7255,14 @@ namespace IfcDoc.Schema.DOC
 		IDocTreeHost
 	{
 		[DataMember(Order = 0)] [XmlArray] public List<DocSelectItem> Selects { get; protected set; }
-		[DataMember(Order = 1)] [XmlArray] public List<DocLine> Tree { get; protected set; } // V5.8, optional tree for EXPRESS-G diagram..... todo: replace this
+		[DataMember(Order = 1)] [XmlIgnore] public List<DocLine> Tree { get; protected set; } // V5.8, optional tree for EXPRESS-G diagram..... todo: replace this
 
 		public DocSelect()
 		{
 			this.Selects = new List<DocSelectItem>();
 			this.Tree = new List<DocLine>();
 		}
+		public void InitializeTree() { Tree = new List<DocLine>(); }
 	}
 
 	public class DocSelectItem : DocObject
@@ -7404,7 +7460,7 @@ namespace IfcDoc.Schema.DOC
 		[DataMember(Order = 2)] [XmlAttribute] public string SecondaryDataType { get; set; }
 		[DataMember(Order = 3)] [XmlArray] public List<DocProperty> Elements { get; set; } // enumerated or complex properties
 		[DataMember(Order = 4)] [XmlAttribute] public DocStateEnum AccessState { get; set; } // V10.5
-		[DataMember(Order = 5)] [XmlAttribute] public DocPropertyEnumeration Enumeration { get; set; } // 12.1
+		[DataMember(Order = 5)] [XmlElement] public DocPropertyEnumeration Enumeration { get; set; } // 12.1
 
 		[IgnoreDataMember] [XmlIgnore] [InverseProperty("Properties")] public HashSet<DocPropertySet> PartOfPset { get; protected set; }
 		[IgnoreDataMember] [XmlIgnore] [InverseProperty("Elements")] public HashSet<DocProperty> PartOfComplex { get; protected set; }
@@ -7984,6 +8040,7 @@ namespace IfcDoc.Schema.DOC
 	public interface IDocTreeHost
 	{
 		List<DocLine> Tree { get; }
+		void InitializeTree();
 	}
 
 	public enum DocExpressType

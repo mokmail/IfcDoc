@@ -212,7 +212,8 @@ namespace IfcDoc.Schema.SVG
 								docSchemaRef.Definitions.Add(docDefRef);
 								docDefRef.DiagramRectangle = LoadRectangle(subgroup);
 
-								LoadTree(subgroup, docDefRef.Tree);
+								if(docDefRef.Tree != null)
+									LoadTree(subgroup, docDefRef.Tree);
 							}
 						}
 					}

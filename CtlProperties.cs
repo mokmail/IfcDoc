@@ -2187,16 +2187,11 @@ namespace IfcDoc
 						CtlExpressG.LayoutLine(docDef, docEntity, docLine.DiagramLine);
 						docLine.Definition = docEntity;
 
-						if (docDef is DocEntity)
+						IDocTreeHost treeHost = docDef as IDocTreeHost;
+						if(treeHost != null && treeHost.Tree != null)
 						{
-							((DocEntity)docDef).Tree.Add(docLine);
+							treeHost.Tree.Add(docLine);
 						}
-						else if (docDef is DocDefinitionRef)
-						{
-							((DocDefinitionRef)docDef).Tree.Add(docLine);
-
-						}
-
 					}
 
 					if (this.SchemaChanged != null)
@@ -2259,25 +2254,30 @@ namespace IfcDoc
 				{
 					foreach (DocDefinitionRef docEntBase in docSchemaRef.Definitions)
 					{
-						foreach (DocLine docLine in docEntBase.Tree)
+						if (docEntBase.Tree != null)
 						{
-							foreach (DocLine docLineSub in docLine.Tree)
+							foreach (DocLine docLine in docEntBase.Tree)
 							{
-								if (docLineSub.Definition == docEntity)
+								foreach (DocLine docLineSub in docLine.Tree)
 								{
-									docLineSub.Delete();
-									docLine.Tree.Remove(docLineSub);
+									if (docLineSub.Definition == docEntity)
+									{
+										docLineSub.Delete();
+										docLine.Tree.Remove(docLineSub);
+										break;
+									}
+								}
+
+
+								if (docLine.Definition == docEntity)
+								{
+									docLine.Delete();
+									docEntBase.Tree.Remove(docLine);
 									break;
 								}
 							}
-
-							if (docLine.Definition == docEntity)
-							{
-								docLine.Delete();
-								docEntBase.Tree.Remove(docLine);
-								break;
-							}
 						}
+					
 					}
 				}
 

@@ -1554,22 +1554,25 @@ namespace IfcDoc
 				foreach (DocDefinitionRef docDefRef in docSchemaRef.Definitions)
 				{
 					// delete any subtype relations
-					foreach (DocLine docLine in docDefRef.Tree)
+					if (docDefRef.Tree != null)
 					{
-						if (docLine.Definition == docDef)
+						foreach (DocLine docLine in docDefRef.Tree)
 						{
-							docDefRef.Tree.Remove(docLine);
-							docLine.Delete();
-							break;
-						}
-
-						foreach (DocLine docSub in docLine.Tree)
-						{
-							if (docSub.Definition == docDef)
+							if (docLine.Definition == docDef)
 							{
-								docLine.Tree.Remove(docSub);
-								docSub.Delete();
+								docDefRef.Tree.Remove(docLine);
+								docLine.Delete();
 								break;
+							}
+
+							foreach (DocLine docSub in docLine.Tree)
+							{
+								if (docSub.Definition == docDef)
+								{
+									docLine.Tree.Remove(docSub);
+									docSub.Delete();
+									break;
+								}
 							}
 						}
 					}
@@ -2639,8 +2642,17 @@ namespace IfcDoc
 
 			}
 
-			this.toolStripMenuItemDiagramFormatTree.Enabled = (e.Node.Tag is IDocTreeHost && ((IDocTreeHost)e.Node.Tag).Tree.Count > 0);
-			this.toolStripMenuItemDiagramFormatTree.Checked = (e.Node.Tag is IDocTreeHost && ((IDocTreeHost)e.Node.Tag).Tree.Count > 0 && ((IDocTreeHost)e.Node.Tag).Tree[0].Definition == null);
+			IDocTreeHost treeHost = e.Node.Tag as IDocTreeHost;
+			if (treeHost != null && treeHost.Tree != null)
+			{
+				this.toolStripMenuItemDiagramFormatTree.Enabled = treeHost.Tree.Count > 0;
+				this.toolStripMenuItemDiagramFormatTree.Checked = treeHost.Tree.Count > 0 && treeHost.Tree[0].Definition == null;
+			}
+			else
+			{
+				this.toolStripMenuItemDiagramFormatTree.Enabled = false;
+				this.toolStripMenuItemDiagramFormatTree.Checked = false;
+			}
 
 			if (e.Node.Tag is DocTerm)
 			{
@@ -7212,8 +7224,17 @@ namespace IfcDoc
 					}
 					else if (docObj is DocEntity || docObj is DocType)
 					{
-						DocSchema docSchema = (DocSchema)this.treeView.SelectedNode.Parent.Parent.Tag;
-						this.m_project.Rename(docSchema, (DocDefinition)docObj, null, e.Label);
+						DocSchema docSchema = this.treeView.SelectedNode.Tag as DocSchema;
+						TreeNode node = this.treeView.SelectedNode;
+						while (node != null && docSchema == null)
+						{
+							docSchema = node.Tag as DocSchema;
+							if (docSchema != null)
+								break;
+							node = node.Parent;
+						}
+						if(docSchema != null)
+							this.m_project.Rename(docSchema, (DocDefinition)docObj, null, e.Label);
 					}
 					else if (docObj is DocAttribute)
 					{
@@ -9626,7 +9647,8 @@ namespace IfcDoc
 									docLine.DiagramLine.Add(new DocPoint()); // end at child entity
 									docLine.Definition = docSubRef;
 
-									docRef.Tree.Add(docLine);
+									if(docRef.Tree != null)
+										docRef.Tree.Add(docLine);
 								}
 							}
 						}
@@ -9647,7 +9669,8 @@ namespace IfcDoc
 						docLine.DiagramLine.Add(new DocPoint()); // end at child entity
 						docLine.Definition = docSelectRef;
 
-						docRef.Tree.Add(docLine);
+						if(docRef.Tree != null)
+							docRef.Tree.Add(docLine);
 					}
 				}
 
@@ -9896,6 +9919,8 @@ namespace IfcDoc
 					MessageBox.Show(this, "Unrecognized Project, aborted.", "Error loading from folder");
 					return;
 				}
+				List<object> instances =  folderSerializer.ExtractObjects(docProject, typeof(SEntity));
+				IfcDocUtils.ReviseImport(instances, 0);
 				m_project = docProject;
 				//FolderStorage.LoadFolder(this.m_project, folderBrowserDialog.SelectedPath);
 			}

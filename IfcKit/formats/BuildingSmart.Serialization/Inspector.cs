@@ -179,14 +179,14 @@ namespace BuildingSmart.Serialization
 					}
 					else
 					{
-						if (!_typemap.ContainsKey(name))
-						{
-							_typemap.Add(name, t);
-						}
 						XmlTypeAttribute xmlType = t.GetCustomAttribute<XmlTypeAttribute>();
 						if(xmlType != null && !string.IsNullOrEmpty(xmlType.TypeName) && !_typemap.ContainsKey(xmlType.TypeName))
 						{
 							_typemap.Add(xmlType.TypeName, t);
+						}
+						else if (!_typemap.ContainsKey(name))
+						{
+							_typemap.Add(name, t);
 						}
 					}
 				}

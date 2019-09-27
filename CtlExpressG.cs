@@ -443,7 +443,6 @@ namespace IfcDoc
 						}
 					}
 				}
-
 				foreach (DocLine docLine in docEntity.Tree)
 				{
 					LayoutTree(docEntity, docLine);
@@ -473,10 +472,12 @@ namespace IfcDoc
                     }
 #endif
 				}
-
-				foreach (DocLine docLine in docRef.Tree)
+				if (docRef.Tree != null)
 				{
-					LayoutTree(docRef, docLine);
+					foreach (DocLine docLine in docRef.Tree)
+					{
+						LayoutTree(docRef, docLine);
+					}
 				}
 			}
 			else if (selection is DocDefined)
@@ -515,19 +516,22 @@ namespace IfcDoc
 			{
 				foreach (DocDefinitionRef docDefRef in docSchemaRef.Definitions)
 				{
-					foreach (DocLine docLine in docDefRef.Tree)
+					if (docDefRef.Tree != null)
 					{
-						if (docLine.Definition == selection)
+						foreach (DocLine docLine in docDefRef.Tree)
 						{
-							LayoutLine(docDefRef, docLine.Definition, docLine.DiagramLine);
-						}
-						else
-						{
-							foreach (DocLine docSub in docLine.Tree)
+							if (docLine.Definition == selection)
 							{
-								if (docSub.Definition == selection)
+								LayoutLine(docDefRef, docLine.Definition, docLine.DiagramLine);
+							}
+							else
+							{
+								foreach (DocLine docSub in docLine.Tree)
 								{
-									LayoutNode(docLine, docSub);
+									if (docSub.Definition == selection)
+									{
+										LayoutNode(docLine, docSub);
+									}
 								}
 							}
 						}
@@ -1259,17 +1263,20 @@ namespace IfcDoc
 					}
 				}
 
-				foreach (DocLine docLine in docType.Tree)
+				if (docType.Tree != null)
 				{
-					if (docLine.DiagramLine.Count > 0)
+					foreach (DocLine docLine in docType.Tree)
 					{
-						DocPoint docPoint = docLine.DiagramLine[docLine.DiagramLine.Count - 1];
-						PointF ptA = new PointF((float)(docPoint.X * Factor), (float)docPoint.Y * Factor);
-						if (Math.Abs(ptFloat.X - ptA.X) < 4 && Math.Abs(ptFloat.Y - ptA.Y) <= 5)
+						if (docLine.DiagramLine.Count > 0)
 						{
-							line = docLine;
-							handle = ResizeHandle.Move;
-							return docType;
+							DocPoint docPoint = docLine.DiagramLine[docLine.DiagramLine.Count - 1];
+							PointF ptA = new PointF((float)(docPoint.X * Factor), (float)docPoint.Y * Factor);
+							if (Math.Abs(ptFloat.X - ptA.X) < 4 && Math.Abs(ptFloat.Y - ptA.Y) <= 5)
+							{
+								line = docLine;
+								handle = ResizeHandle.Move;
+								return docType;
+							}
 						}
 					}
 				}
@@ -1329,16 +1336,18 @@ namespace IfcDoc
 				{
 					if (HitTest(docType.DiagramRectangle, pt, out handle))
 						return docType;
-
-					foreach (DocLine docLine in docType.Tree)
+					if (docType.Tree != null)
 					{
-						DocPoint docPoint = docLine.DiagramLine[docLine.DiagramLine.Count - 1];
-						PointF ptA = new PointF((float)(docPoint.X * Factor), (float)docPoint.Y * Factor);
-						if (Math.Abs(ptFloat.X - ptA.X) < 4 && Math.Abs(ptFloat.Y - ptA.Y) <= 5)
+						foreach (DocLine docLine in docType.Tree)
 						{
-							handle = ResizeHandle.Move;
-							line = docLine;
-							return docType;
+							DocPoint docPoint = docLine.DiagramLine[docLine.DiagramLine.Count - 1];
+							PointF ptA = new PointF((float)(docPoint.X * Factor), (float)docPoint.Y * Factor);
+							if (Math.Abs(ptFloat.X - ptA.X) < 4 && Math.Abs(ptFloat.Y - ptA.Y) <= 5)
+							{
+								handle = ResizeHandle.Move;
+								line = docLine;
+								return docType;
+							}
 						}
 					}
 				}

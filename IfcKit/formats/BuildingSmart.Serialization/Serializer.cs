@@ -317,6 +317,11 @@ namespace BuildingSmart.Serialization
 						if (!(bool)value)
 							return null;
 					}
+					else if (value is int)
+					{
+						if ((int)value == 0)
+							return null;
+					}
 				}
 			}
 			return value;

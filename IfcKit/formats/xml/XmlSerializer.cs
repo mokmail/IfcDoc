@@ -267,10 +267,17 @@ namespace BuildingSmart.Serialization.Xml
 				}
 				if (entity == null)
 				{
-					if (propInfo != null && string.Compare(readerLocalName, propInfo.Name) == 0 && typeof(IEnumerable).IsAssignableFrom(propInfo.PropertyType) && reader.AttributeCount == 0)
+					if (propInfo != null && string.Compare(readerLocalName, propInfo.Name) == 0 && reader.AttributeCount == 0)
 					{
-						useParent = true;
-						entity = parent;
+						if (typeof(IEnumerable).IsAssignableFrom(propInfo.PropertyType))
+						{
+							useParent = true;
+							entity = parent;
+						}
+						else
+						{
+							entity = FormatterServices.GetUninitializedObject(t);
+						}
 					}
 					else
 						entity = FormatterServices.GetUninitializedObject(t);
@@ -331,10 +338,11 @@ namespace BuildingSmart.Serialization.Xml
 				if(nestedPropInfo == null && parent != null)
 				{
 					nestedPropInfo = detectPropertyInfo(parent.GetType(), nestedReaderLocalName);
-					if (nestedPropInfo == null)
-						nestedPropInfo = propInfo;
-					localEntity = parent;
-					useParent = true;
+					if (nestedPropInfo != null)
+					{
+						localEntity = parent;
+						useParent = true;
+					}
 
 				}
 				switch (reader.NodeType)
@@ -1627,6 +1635,8 @@ namespace BuildingSmart.Serialization.Xml
 
 			internal void Queue(object o, PropertyInfo propertyInfo)
 			{
+				if (propertyInfo == null)
+					return;
 				attributes.Add(new Tuple<object, PropertyInfo>(o, propertyInfo));
 			}
 			

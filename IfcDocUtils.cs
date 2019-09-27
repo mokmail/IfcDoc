@@ -48,6 +48,10 @@ namespace IfcDoc
 					}
 				}
 			}
+			foreach(DocTemplateDefinition templateDefinition in project.Templates)
+			{
+				templateDefinition.setRuleIds();	
+			}
 
 			DocPropertyConstant other = project.PropertyConstants.Where(x => string.Compare(x.Name, "OTHER", true) == 0).FirstOrDefault();
 			DocPropertyConstant none = project.PropertyConstants.Where(x => string.Compare(x.Name, "NONE", true) == 0).FirstOrDefault();
@@ -127,6 +131,124 @@ namespace IfcDoc
 			List<object> instances = new List<object>();
 			return LoadFile(filePath, out instances);
 		}
+		internal static void ReviseImport(List<object> instances, double schemaVersion)
+		{
+			foreach (object o in instances)
+			{
+				if (o is DocSchema)
+				{
+					DocSchema docSchema = (DocSchema)o;
+
+					docSchema.initialize();
+					// renumber page references
+					foreach (DocPageTarget docTarget in docSchema.PageTargets)
+					{
+						if (docTarget.Definition != null) // fix it up -- NULL bug from older .ifcdoc files
+						{
+							int page = docSchema.GetDefinitionPageNumber(docTarget);
+							int item = docSchema.GetPageTargetItemNumber(docTarget);
+							docTarget.Name = page + "," + item + " " + docTarget.Definition.Name;
+
+							foreach (DocPageSource docSource in docTarget.Sources)
+							{
+								docSource.Name = docTarget.Name;
+							}
+						}
+					}
+				}
+				else if (o is DocExchangeDefinition)
+				{
+					// files before V4.9 had Description field; no longer needed so use regular Documentation field again.
+					DocExchangeDefinition docexchange = (DocExchangeDefinition)o;
+					if (docexchange._Description != null)
+					{
+						docexchange.Documentation = docexchange._Description;
+						docexchange._Description = null;
+					}
+				}
+				else if (o is DocTemplateDefinition)
+				{
+					// files before V5.0 had Description field; no longer needed so use regular Documentation field again.
+					DocTemplateDefinition doctemplate = (DocTemplateDefinition)o;
+					if (doctemplate._Description != null)
+					{
+						doctemplate.Documentation = doctemplate._Description;
+						doctemplate._Description = null;
+					}
+
+					foreach (DocModelRule rule in doctemplate.Rules)
+					{
+						rule.setId(doctemplate.UniqueId);
+					}
+				}
+				else if (o is DocConceptRoot)
+				{
+					// V12.0: ensure template is defined
+					DocConceptRoot docConcRoot = (DocConceptRoot)o;
+					if (docConcRoot.ApplicableTemplate == null && docConcRoot.ApplicableEntity != null)
+					{
+						docConcRoot.ApplicableTemplate = new DocTemplateDefinition();
+						docConcRoot.ApplicableTemplate.Type = docConcRoot.ApplicableEntity.Name;
+					}
+				}
+				else if (o is DocTemplateUsage)
+				{
+					// V12.0: ensure template is defined
+					DocTemplateUsage docUsage = (DocTemplateUsage)o;
+					if (docUsage.Definition == null)
+					{
+						docUsage.Definition = new DocTemplateDefinition();
+					}
+				}
+				else if (o is DocLocalization)
+				{
+					DocLocalization localization = o as DocLocalization;
+					if (!string.IsNullOrEmpty(localization.Name))
+						localization.Name = localization.Name.Trim();
+				}
+				// ensure all objects have valid guid
+				DocObject docObject = o as DocObject;
+				if (docObject != null)
+				{
+					if (docObject.Uuid == Guid.Empty)
+					{
+						docObject.Uuid = Guid.NewGuid();
+					}
+					if (!string.IsNullOrEmpty(docObject.Documentation))
+						docObject.Documentation = docObject.Documentation.Trim();
+
+					if (schemaVersion < 12.1)
+					{
+						DocChangeSet docChangeSet = docObject as DocChangeSet;
+						if (docChangeSet != null)
+						{
+							docChangeSet.ChangesEntities.RemoveAll(isUnchanged);
+							docChangeSet.ChangesProperties.RemoveAll(isUnchanged);
+							docChangeSet.ChangesQuantities.RemoveAll(isUnchanged);
+							docChangeSet.ChangesViews.RemoveAll(isUnchanged);
+
+						}
+						else
+						{
+							if (schemaVersion < 12)
+							{
+								DocEntity entity = docObject as DocEntity;
+								if (entity != null)
+								{
+									entity.ClearDefaultMember();
+								}
+							}
+						}
+					}
+				}
+
+				IDocTreeHost treeHost = o as IDocTreeHost;
+				if (treeHost != null && treeHost.Tree == null)
+				{
+					treeHost.InitializeTree();
+				}
+			}
+		}
 		public static DocProject LoadFile(string filePath, out List<object> instances)
 		{ 
 			instances = new List<object>();
@@ -184,113 +306,8 @@ namespace IfcDoc
 				}
 			}
 			List<SEntity> listDelete = new List<SEntity>();
-			List<DocTemplateDefinition> listTemplate = new List<DocTemplateDefinition>();
 
-			foreach (object o in instances)
-			{
-				if (o is DocSchema)
-				{
-					DocSchema docSchema = (DocSchema)o;
-
-					// renumber page references
-					foreach (DocPageTarget docTarget in docSchema.PageTargets)
-					{
-						if (docTarget.Definition != null) // fix it up -- NULL bug from older .ifcdoc files
-						{
-							int page = docSchema.GetDefinitionPageNumber(docTarget);
-							int item = docSchema.GetPageTargetItemNumber(docTarget);
-							docTarget.Name = page + "," + item + " " + docTarget.Definition.Name;
-
-							foreach (DocPageSource docSource in docTarget.Sources)
-							{
-								docSource.Name = docTarget.Name;
-							}
-						}
-					}
-				}
-				else if (o is DocExchangeDefinition)
-				{
-					// files before V4.9 had Description field; no longer needed so use regular Documentation field again.
-					DocExchangeDefinition docexchange = (DocExchangeDefinition)o;
-					if (docexchange._Description != null)
-					{
-						docexchange.Documentation = docexchange._Description;
-						docexchange._Description = null;
-					}
-				}
-				else if (o is DocTemplateDefinition)
-				{
-					// files before V5.0 had Description field; no longer needed so use regular Documentation field again.
-					DocTemplateDefinition doctemplate = (DocTemplateDefinition)o;
-					if (doctemplate._Description != null)
-					{
-						doctemplate.Documentation = doctemplate._Description;
-						doctemplate._Description = null;
-					}
-
-					listTemplate.Add((DocTemplateDefinition)o);
-				}
-				else if (o is DocConceptRoot)
-				{
-					// V12.0: ensure template is defined
-					DocConceptRoot docConcRoot = (DocConceptRoot)o;
-					if (docConcRoot.ApplicableTemplate == null && docConcRoot.ApplicableEntity != null)
-					{
-						docConcRoot.ApplicableTemplate = new DocTemplateDefinition();
-						docConcRoot.ApplicableTemplate.Type = docConcRoot.ApplicableEntity.Name;
-					}
-				}
-				else if (o is DocTemplateUsage)
-				{
-					// V12.0: ensure template is defined
-					DocTemplateUsage docUsage = (DocTemplateUsage)o;
-					if (docUsage.Definition == null)
-					{
-						docUsage.Definition = new DocTemplateDefinition();
-					}
-				}
-				else if (o is DocLocalization)
-				{
-					DocLocalization localization = o as DocLocalization;
-					if(!string.IsNullOrEmpty(localization.Name))
-						localization.Name = localization.Name.Trim();
-				}
-				// ensure all objects have valid guid
-				DocObject docObject = o as DocObject;
-				if (docObject != null)
-				{
-					if (docObject.Uuid == Guid.Empty)
-					{
-						docObject.Uuid = Guid.NewGuid();
-					}
-					if (!string.IsNullOrEmpty(docObject.Documentation))
-						docObject.Documentation = docObject.Documentation.Trim();
-
-					if (schemaVersion < 12.1)
-					{
-						DocChangeSet docChangeSet = docObject as DocChangeSet;
-						if (docChangeSet != null)
-						{
-							docChangeSet.ChangesEntities.RemoveAll(isUnchanged);
-							docChangeSet.ChangesProperties.RemoveAll(isUnchanged);
-							docChangeSet.ChangesQuantities.RemoveAll(isUnchanged);
-							docChangeSet.ChangesViews.RemoveAll(isUnchanged);
-
-						}
-						else
-						{
-							if (schemaVersion < 12)
-							{
-								DocEntity entity = docObject as DocEntity;
-								if (entity != null)
-								{
-									entity.ClearDefaultMember();
-								}
-							}
-						}
-					}
-				}
-			}
+			ReviseImport(instances, schemaVersion);
 
 			if (project == null)
 				return null;
