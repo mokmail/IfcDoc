@@ -625,7 +625,7 @@ namespace IfcDoc
 			else if (valpath != null &&
 				valpath.Property != null &&
 				valpath.Property.Name.Equals("HasPropertySets") &&
-				valpath.InnerPath != null && valpath.InnerPath.Type.Name.Equals("IfcPropertySet"))
+				valpath.InnerPath != null && valpath.InnerPath.Type.Name.Equals("IfcPropertySet") && !string.IsNullOrEmpty(valpath.Identifier))
 			{
 				DocObject docPset = null;
 				mapEntity.TryGetValue(valpath.Identifier, out docPset);

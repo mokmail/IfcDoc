@@ -770,7 +770,7 @@ namespace IfcDoc.Schema.DOC
 			}
 
 			string draft = "";
-			if (docPub != null && docPub.Status != "Official")
+			if (docPub != null && string.Compare(docPub.Status, "Official",true) != 0)
 			{
 				draft = "review/";
 			}

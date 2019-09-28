@@ -1643,7 +1643,7 @@ namespace IfcDoc.Format.HTM
 		/// Writes ISO documentation by formatting hyperlinks and removing blocks starting with "HISTORY" and "IFC2X4 CHANGE"
 		/// </summary>
 		/// <param name="content"></param>
-		public void WriteDocumentationMarkup(string content, DocObject current, DocPublication docPublication)
+		public void WriteDocumentationMarkup(string content, DocObject current, DocPublication docPublication, string htmlPath)
 		{
 			if (content == null)
 				return;
@@ -1876,11 +1876,11 @@ namespace IfcDoc.Format.HTM
 							string imgold = content.Substring(s + 1, t - s - 1);
 							imgold = imgold.Substring(imgold.LastIndexOf('/') + 1);
 							string source = Properties.Settings.Default.InputPathGeneral + "\\" + imgold;
-							string target = Properties.Settings.Default.OutputPath + "\\" + DocumentationISO.MakeLinkName(docPublication) + "\\html\\figures\\" + imgold;
+							string target = htmlPath + "\\figures\\" + imgold;
 							if (current is DocExample)
 							{
 								source = Properties.Settings.Default.InputPathGeneral + "\\examples\\" + imgold;
-								target = Properties.Settings.Default.OutputPath + "\\" + DocumentationISO.MakeLinkName(docPublication) + "\\html\\figures\\examples\\" + imgold;
+								target = htmlPath + "\\figures\\examples\\" + imgold;
 							}
 
 							target = target.ToLower();
@@ -3085,14 +3085,14 @@ namespace IfcDoc.Format.HTM
              */
 		}
 
-		public void WriteEntityInheritance(DocEntity entity, DocEntity treeleaf, DocModelView[] views, Dictionary<DocObject, bool>[] viewmap, DocPublication docPublication, ref int sequence)
+		public void WriteEntityInheritance(DocEntity entity, DocEntity treeleaf, DocModelView[] views, Dictionary<DocObject, bool>[] viewmap, DocPublication docPublication, string htmlPath, ref int sequence)
 		{
 			if (entity.BaseDefinition != null)
 			{
 				if (this.m_mapEntity.ContainsKey(entity.BaseDefinition))
 				{
 					DocEntity baseEntity = (DocEntity)this.m_mapEntity[entity.BaseDefinition];
-					WriteEntityInheritance(baseEntity, treeleaf, views, viewmap, docPublication, ref sequence);
+					WriteEntityInheritance(baseEntity, treeleaf, views, viewmap, docPublication, htmlPath, ref sequence);
 				}
 			}
 
@@ -3115,7 +3115,7 @@ namespace IfcDoc.Format.HTM
 			}
 			this.WriteLine("</td></tr>");
 
-			WriteEntityAttributes(entity, treeleaf, views, viewmap, docPublication, ref sequence);
+			WriteEntityAttributes(entity, treeleaf, views, viewmap, docPublication, htmlPath, ref sequence);
 		}
 
 		private void WriteEntityAttributeViews(DocAttribute docAttr, DocModelView[] views, Dictionary<DocObject, bool>[] viewmap)
@@ -3156,7 +3156,7 @@ namespace IfcDoc.Format.HTM
 		/// <param name="entity"></param>
 		/// <param name="treeleaf"></param>
 		/// <param name="sequence">Last sequence number used (0 initially)</param>
-		public void WriteEntityAttributes(DocEntity entity, DocEntity treeleaf, DocModelView[] views, Dictionary<DocObject, bool>[] viewmap, DocPublication docPublication, ref int sequence)
+		public void WriteEntityAttributes(DocEntity entity, DocEntity treeleaf, DocModelView[] views, Dictionary<DocObject, bool>[] viewmap, DocPublication docPublication, string htmlPath, ref int sequence)
 		{
 			bool bInverse = false;
 			bool bDerived = false;
@@ -3244,7 +3244,7 @@ namespace IfcDoc.Format.HTM
 							this.m_writer.WriteLine("</td><td>");
 							if (this.m_included == null || this.m_included.ContainsKey(attr))
 							{
-								this.WriteDocumentationMarkup(attr.DocumentationHtmlNoParagraphs(), entity, docPublication);
+								this.WriteDocumentationMarkup(attr.DocumentationHtmlNoParagraphs(), entity, docPublication, htmlPath);
 							}
 							else
 							{
@@ -3290,7 +3290,7 @@ namespace IfcDoc.Format.HTM
 							}
 
 							this.m_writer.Write("</td><td>");
-							this.WriteDocumentationMarkup(attr.DocumentationHtmlNoParagraphs(), entity, docPublication);
+							this.WriteDocumentationMarkup(attr.DocumentationHtmlNoParagraphs(), entity, docPublication, htmlPath);
 							this.m_writer.Write("</td>");
 
 							this.WriteEntityAttributeViews(attr, views, viewmap);
@@ -3359,7 +3359,7 @@ namespace IfcDoc.Format.HTM
 						}
 
 						this.m_writer.Write("</td><td>");
-						this.WriteDocumentationMarkup(attr.DocumentationHtmlNoParagraphs(), entity, docPublication);
+						this.WriteDocumentationMarkup(attr.DocumentationHtmlNoParagraphs(), entity, docPublication, htmlPath);
 						this.m_writer.WriteLine("</td>");
 
 						this.WriteEntityAttributeViews(attr, views, viewmap);

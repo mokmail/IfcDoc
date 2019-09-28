@@ -4839,13 +4839,14 @@ namespace IfcDoc
 
 				string path = Properties.Settings.Default.OutputPath;
 
-				DocumentationISO.Generate(this.m_project, path, mapEntity, mapSchema, this.m_publications, this.backgroundWorkerGenerate, this.m_formProgress);
+				List<string> indexPaths = DocumentationISO.Generate(this.m_project, path, mapEntity, mapSchema, this.m_publications, this.backgroundWorkerGenerate, this.m_formProgress);
 
 				// launch the content
-				foreach (DocPublication docPub in this.m_publications)
+
+				foreach(string indexPath in indexPaths)
 				{
-					string relpath = path + @"\" + DocumentationISO.MakeLinkName(docPub);
-					System.Diagnostics.Process.Start(relpath + @"\html\index.htm");
+					if(!string.IsNullOrEmpty(indexPath))
+						System.Diagnostics.Process.Start(indexPath);
 				}
 			}
 			catch (Exception ex)
