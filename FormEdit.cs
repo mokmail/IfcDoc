@@ -7549,11 +7549,11 @@ namespace IfcDoc
 		private void toolStripMenuItemInsertEnumerationConstant_Click(object sender, EventArgs e)
 		{
 			TreeNode tn = this.treeView.SelectedNode;
-			if (tn.Tag == typeof(DocConstant))
+			if (tn.Tag is DocEnumeration docEnum)
 			{
 				DocConstant docConst = new DocConstant();
 				this.m_project.Constants.Add(docConst);
-
+				docEnum.Constants.Add(docConst);
 				this.treeView.SelectedNode = this.LoadNode(tn, docConst, docConst.ToString(), false);
 				toolStripMenuItemEditRename_Click(this, e);
 			}
