@@ -3634,7 +3634,7 @@ namespace IfcDoc
 				{
 					this.ctlExpressG.Project = this.m_project;
 					this.ctlExpressG.Schema = docSchema;
-					this.ctlExpressG.Selection = obj;
+					//this.ctlExpressG.Selection = obj;
 					this.ctlExpressG.Visible = true;
 				}
 
