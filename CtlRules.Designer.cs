@@ -210,7 +210,7 @@
             this.treeViewTemplate.ImageIndex = 0;
             this.treeViewTemplate.ImageList = this.imageListRules;
             this.treeViewTemplate.Location = new System.Drawing.Point(0, 31);
-            this.treeViewTemplate.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.treeViewTemplate.Margin = new System.Windows.Forms.Padding(4);
             this.treeViewTemplate.Name = "treeViewTemplate";
             this.treeViewTemplate.SelectedImageIndex = 0;
             this.treeViewTemplate.Size = new System.Drawing.Size(1067, 461);
@@ -232,7 +232,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.treeViewTemplate);
             this.Controls.Add(this.toolStrip1);
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "CtlRules";
             this.Size = new System.Drawing.Size(1067, 492);
             this.toolStrip1.ResumeLayout(false);

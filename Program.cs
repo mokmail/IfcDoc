@@ -1333,6 +1333,7 @@ namespace IfcDoc
 				if (propertySetTemplate != null)
 				{
 					changes.Add("\r\n");
+					DocVariableSet variableSet = null;
 					if (propertySetTemplate.TemplateType.ToString().ToUpper().StartsWith("QTO"))
 					{
 						DocQuantitySet quantitySet = project.FindQuantitySet(propertySetTemplate.Name, out existingSchema);
@@ -1354,6 +1355,7 @@ namespace IfcDoc
 								changes.Add(propertySetTemplate.Name + " revised documentation : \r\n < " + propertySetTemplate.Description + "\r\n> " + quantitySet.Documentation);
 							}
 						}
+						variableSet = quantitySet;
 						foreach (IfcPropertyTemplate template in propertySetTemplate.HasPropertyTemplates)
 							aggregate.createOrFindQuantityTemplate(template, quantitySet, ref changes);
 					}
@@ -1378,9 +1380,15 @@ namespace IfcDoc
 								changes.Add(propertySetTemplate.Name + " revised documentation : \r\n < " + propertySetTemplate.Description + "\r\n> " + propertySet.Documentation);
 							}
 						}
+						variableSet = propertySet;
 						foreach (IfcPropertyTemplate template in propertySetTemplate.HasPropertyTemplates)
 							aggregate.createOrFindPropertyTemplate(template, propertySet, ref changes);
+
+						if(propertySetTemplate.TemplateType != null)
+							propertySet.PropertySetType = propertySetTemplate.TemplateType.Value.ToString();
 					}
+					if(propertySetTemplate.ApplicableEntity != null)
+						variableSet.ApplicableType = propertySetTemplate.ApplicableEntity.Value.Value;
 				}
 				else
 				{ 
