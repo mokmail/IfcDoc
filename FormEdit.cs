@@ -4699,8 +4699,8 @@ namespace IfcDoc
 			object selected = this.treeView.SelectedNode.Tag;
 			object parent = this.treeView.SelectedNode.Parent.Tag;
 
-			DocProperty docProp = selected as DocProperty;
-			if (docProp != null)
+			//DocProperty docProp = selected as DocProperty;
+			if (selected is DocProperty docProp)
 			{
 				DocPropertySet docPset = parent as DocPropertySet;
 				if (docPset != null)
@@ -4718,9 +4718,9 @@ namespace IfcDoc
 					}
 				}
 			}
-			else
+			else if (selected is DocQuantity docQuantity)
 			{
-				DocQuantity docQuantity = selected as DocQuantity;
+				//DocQuantity docQuantity = selected as DocQuantity;
 				if (docQuantity != null)
 				{
 					DocQuantitySet docQset = parent as DocQuantitySet;
@@ -4730,30 +4730,30 @@ namespace IfcDoc
 						docQuantity.PartOfQset.Remove(docQset);
 					}
 				}
-				else
+			}
+			else if (selected is DocConstant docConstant)
+			{
+				//DocConstant docConstant = selected as DocConstant;
+				if (docConstant != null)
 				{
-					DocConstant docConstant = selected as DocConstant;
-					if (docConstant != null)
+					DocEnumeration docEnumeration = parent as DocEnumeration;
+					if (docEnumeration != null)
 					{
-						DocEnumeration docEnumeration = parent as DocEnumeration;
-						if (docEnumeration != null)
-						{
-							docEnumeration.Constants.Remove(docConstant);
-							docConstant.PartOfEnumeration.Remove(docEnumeration);
-						}
+						docEnumeration.Constants.Remove(docConstant);
+						docConstant.PartOfEnumeration.Remove(docEnumeration);
 					}
-					else
+				}
+			}
+			else if (selected is DocPropertyConstant docPropertyConstant)
+			{
+				//DocPropertyConstant docPropertyConstant = selected as DocPropertyConstant;
+				if (docPropertyConstant != null)
+				{
+					DocPropertyEnumeration docPropertyEnumeration = parent as DocPropertyEnumeration;
+					if (docPropertyEnumeration != null)
 					{
-						DocPropertyConstant docPropertyConstant = selected as DocPropertyConstant;
-						if (docPropertyConstant != null)
-						{
-							DocPropertyEnumeration docPropertyEnumeration = parent as DocPropertyEnumeration;
-							if (docPropertyEnumeration != null)
-							{
-								docPropertyEnumeration.Constants.Remove(docPropertyConstant);
-								docPropertyConstant.PartOfEnumeration.Remove(docPropertyEnumeration);
-							}
-						}
+						docPropertyEnumeration.Constants.Remove(docPropertyConstant);
+						docPropertyConstant.PartOfEnumeration.Remove(docPropertyEnumeration);
 					}
 				}
 			}
@@ -7549,11 +7549,11 @@ namespace IfcDoc
 		private void toolStripMenuItemInsertEnumerationConstant_Click(object sender, EventArgs e)
 		{
 			TreeNode tn = this.treeView.SelectedNode;
-			if (tn.Tag == typeof(DocConstant))
+			if (tn.Tag is DocEnumeration docEnum)
 			{
 				DocConstant docConst = new DocConstant();
 				this.m_project.Constants.Add(docConst);
-
+				docEnum.Constants.Add(docConst);
 				this.treeView.SelectedNode = this.LoadNode(tn, docConst, docConst.ToString(), false);
 				toolStripMenuItemEditRename_Click(this, e);
 			}
