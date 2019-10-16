@@ -173,7 +173,7 @@ namespace BuildingSmart.Serialization.Xml
 				if (!string.IsNullOrEmpty(reader.LocalName) && string.Compare(reader.LocalName, typename) != 0)
 				{
 					Type testType = GetTypeByName(reader.LocalName);
-					if (testType != null && testType.IsSubclassOf(t))
+					if (testType != null && (t == null || testType.IsSubclassOf(t)))
 						t = testType;
 				}
 			}
