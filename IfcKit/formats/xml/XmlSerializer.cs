@@ -31,6 +31,7 @@ namespace BuildingSmart.Serialization.Xml
 		public string NameSpace { set { _NameSpace = value; } }
 		public string SchemaLocation { set { _SchemaLocation = value; } }
 
+		Dictionary<Type, PropertyInfo> _XmlTextMap = new Dictionary<Type, PropertyInfo>(); // cached property for innerText 
 		public XmlSerializer(Type typeProject) : base(typeProject, true)
 		{
 		}
@@ -439,16 +440,23 @@ namespace BuildingSmart.Serialization.Xml
 		}
 		public PropertyInfo detectTextAttribute(Type type)
 		{
-			PropertyInfo[] fields = type.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-			foreach (PropertyInfo field in fields)
+			PropertyInfo result = null;
+			if (_XmlTextMap.TryGetValue(type, out result))
+				return result;
+			PropertyInfo[] properties = type.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+			foreach (PropertyInfo property in properties)
 			{
-				XmlTextAttribute xmlTextAttribute = field.GetCustomAttribute<XmlTextAttribute>();
+				XmlTextAttribute xmlTextAttribute = property.GetCustomAttribute<XmlTextAttribute>();
 				if (xmlTextAttribute != null)
-					return field;
+				{
+					_XmlTextMap[type] = property;
+					return property;
+				}	
 			}
 			Type baseType = type.BaseType;
 			if (baseType != typeof(object) && baseType != typeof(Serializer))
 				return detectTextAttribute(baseType);
+			_XmlTextMap[type] = null;
 			return null;
 		}
 
@@ -817,6 +825,7 @@ namespace BuildingSmart.Serialization.Xml
 				}
 			}
 			bool close = this.WriteEntityAttributes(writer, ref indent, o, propertiesToIgnore, queue, isIdPass);
+
 			if (close)
 			{
 				this.WriteEndElementEntity(writer, ref indent, name);
@@ -1294,6 +1303,20 @@ namespace BuildingSmart.Serialization.Xml
 				}
 				foreach (object obj in enumerable)
 					WriteEntity(writer, ref indent, obj, propertiesToIgnore, queue, isIdPass, "", "");
+			}
+			else if (!isIdPass)
+			{
+				PropertyInfo property = detectTextAttribute(t);
+				if(property != null)
+				{
+					object obj = property.GetValue(o);
+					if (!open)
+					{
+						WriteOpenElement(writer);
+						open = true;
+					}
+					WriteEntity(writer, ref indent, obj.ToString(), propertiesToIgnore, queue, isIdPass, "", "");
+				}
 			}
 			if (!open)
 			{
