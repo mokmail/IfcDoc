@@ -238,13 +238,12 @@ namespace IfcDoc.Schema.MVD
 	[XmlType("Definition")]
 	public class Definition : SEntity
 	{
-		[DataMember(Order = 0), XmlElement("Body")] public List<Body> Body { get; set; }
+		[DataMember(Order = 0), XmlElement("Body")] public Body Body { get; set; }
 		[DataMember(Order = 1), XmlElement("Link")] public List<Link> Links { get; set; }
 		[DataMember(Order = 2), XmlAttribute("tags")] public string Tags { get; set; }
 		
 		public Definition()
 		{
-			Body = new List<Body>();
 			Links = new List<Link>();
 		}
 	}
@@ -252,11 +251,10 @@ namespace IfcDoc.Schema.MVD
 	public class Body : SEntity,
 		IXmlSerializable
 	{
-		[DataMember(Order = 0), XmlIgnore] public string Content { get; set; }
+		[XmlText] public string Content { get; set; }
 		[DataMember(Order = 1), XmlAttribute("lang")] public string Lang { get; set; }
 		[DataMember(Order = 2), XmlAttribute("tags")] public string Tags { get; set; }
 
-		[XmlElement("Content", Order = 0)]
 		public System.Xml.XmlCDataSection ContentCDATA
 		{
 			get
