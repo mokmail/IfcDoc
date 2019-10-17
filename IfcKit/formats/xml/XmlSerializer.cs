@@ -332,10 +332,23 @@ namespace BuildingSmart.Serialization.Xml
 				reader.MoveToElement();
 			}
 			bool isNested = (t == null || reader.AttributeCount == 0) && nestedElementDefinition;
+			int depth = reader.Depth;
 			while (reader.Read())
 			{
 				if (reader.NodeType == XmlNodeType.Whitespace || reader.NodeType == XmlNodeType.Comment)
 					continue;
+				if(reader.NodeType == XmlNodeType.CDATA)
+				{
+					if (t != null)
+					{
+						PropertyInfo textProperty = detectTextAttribute(t);
+						if (textProperty != null)
+						{
+							LoadEntityValue(entity, textProperty, reader.Value);
+						}
+					}
+					continue;
+				}
 				if(reader.NodeType == XmlNodeType.EndElement)
 				{
 					//System.Diagnostics.Debug.WriteLine(new string(' ', indent) + "!!ReadEntity " + readerLocalName + " " + (t == null ? "" : ": " + t.Name + ".") + reader.LocalName + " " + entity.ToString() + " " + reader.NodeType);
@@ -364,7 +377,7 @@ namespace BuildingSmart.Serialization.Xml
 
 					case XmlNodeType.Element:
 						{
-							if (isNested)
+							if (isNested || reader.Depth > depth)
 							{
 			//System.Diagnostics.Debug.WriteLine(new string(' ', indent) + "  Nested "+ nestedReaderLocalName);
 								if (t == null || string.Compare(nestedReaderLocalName, t.Name) == 0)
@@ -425,7 +438,20 @@ namespace BuildingSmart.Serialization.Xml
 				propertyInfo = GetInverseByName(type, propertyInfoName);
 			return propertyInfo;
 		}
-		
+		public PropertyInfo detectTextAttribute(Type type)
+		{
+			PropertyInfo[] fields = type.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+			foreach (PropertyInfo field in fields)
+			{
+				XmlTextAttribute xmlTextAttribute = field.GetCustomAttribute<XmlTextAttribute>();
+				if (xmlTextAttribute != null)
+					return field;
+			}
+			Type baseType = type.BaseType;
+			if (baseType != typeof(object) && baseType != typeof(Serializer))
+				return detectTextAttribute(baseType);
+			return null;
+		}
 
 		private void LoadCollectionValue(IEnumerable list, object v)
 		{
