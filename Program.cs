@@ -2907,7 +2907,7 @@ namespace IfcDoc
 					{
 						ConceptTemplate mvdViewTemplate = new ConceptTemplate();
 						mvdViewTemplate.Name = "_" + docModelView.Name; // underscore indicates hidden
-						mvdViewTemplate.Code = docModelView.Uuid.ToString();
+						mvdViewTemplate.Uuid = docModelView.Uuid;
 						mvdViewTemplate.SubTemplates = new List<ConceptTemplate>();
 						mvd.Templates.Add(mvdViewTemplate);
 
