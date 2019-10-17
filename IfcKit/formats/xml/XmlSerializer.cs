@@ -332,7 +332,6 @@ namespace BuildingSmart.Serialization.Xml
 				reader.MoveToElement();
 			}
 			bool isNested = (t == null || reader.AttributeCount == 0) && nestedElementDefinition;
-			int depth = reader.Depth;
 			while (reader.Read())
 			{
 				if (reader.NodeType == XmlNodeType.Whitespace || reader.NodeType == XmlNodeType.Comment)
@@ -377,7 +376,7 @@ namespace BuildingSmart.Serialization.Xml
 
 					case XmlNodeType.Element:
 						{
-							if (isNested || reader.Depth > depth)
+							if (isNested)
 							{
 			//System.Diagnostics.Debug.WriteLine(new string(' ', indent) + "  Nested "+ nestedReaderLocalName);
 								if (t == null || string.Compare(nestedReaderLocalName, t.Name) == 0)
