@@ -177,9 +177,14 @@ namespace BuildingSmart.Serialization.Xml
 						t = testType;
 				}
 			}
+
 			string r = reader.GetAttribute("href");
 			if (string.IsNullOrEmpty(r))
-				r = reader.GetAttribute("ref");
+			{
+				PropertyInfo refProperty = t == null ? null : GetFieldByName(t, "ref");
+				if(refProperty == null)
+					r = reader.GetAttribute("ref");
+			}
 			if (!string.IsNullOrEmpty(r))
 			{
 				object value = null;
@@ -194,7 +199,12 @@ namespace BuildingSmart.Serialization.Xml
 			}
 			if (t == null || t.IsValueType)
 			{
-				if (!reader.IsEmptyElement)
+				if (reader.IsEmptyElement)
+				{
+					if (propInfo != null && typeof(IEnumerable).IsAssignableFrom(propInfo.PropertyType))
+						return null;
+				}
+				else
 				{
 					bool hasvalue = false;
 					while (reader.Read())
