@@ -36,7 +36,15 @@ namespace IfcDoc
 			{
 				ListViewItem lvi = new ListViewItem();
 				lvi.Tag = constant;
-				lvi.Text = constant.Name +  (processed.ContainsKey(constant.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format( constant.Uuid) : "");
+				if (constant.Name != null)
+				{
+					lvi.Text = constant.Name +  (processed.ContainsKey(constant.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format( constant.Uuid) : "");
+				}
+				else
+				{
+					lvi.Text = (processed.ContainsKey(constant.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format(constant.Uuid) : "");
+				}
+
 				lvi.ImageIndex = 0;
 				this.listView.Items.Add(lvi);
 
