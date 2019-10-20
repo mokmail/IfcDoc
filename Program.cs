@@ -1333,6 +1333,7 @@ namespace IfcDoc
 				if (propertySetTemplate != null)
 				{
 					changes.Add("\r\n");
+					DocVariableSet variableSet = null;
 					if (propertySetTemplate.TemplateType.ToString().ToUpper().StartsWith("QTO"))
 					{
 						DocQuantitySet quantitySet = project.FindQuantitySet(propertySetTemplate.Name, out existingSchema);
@@ -1354,6 +1355,7 @@ namespace IfcDoc
 								changes.Add(propertySetTemplate.Name + " revised documentation : \r\n < " + propertySetTemplate.Description + "\r\n> " + quantitySet.Documentation);
 							}
 						}
+						variableSet = quantitySet;
 						foreach (IfcPropertyTemplate template in propertySetTemplate.HasPropertyTemplates)
 							aggregate.createOrFindQuantityTemplate(template, quantitySet, ref changes);
 					}
@@ -1378,9 +1380,15 @@ namespace IfcDoc
 								changes.Add(propertySetTemplate.Name + " revised documentation : \r\n < " + propertySetTemplate.Description + "\r\n> " + propertySet.Documentation);
 							}
 						}
+						variableSet = propertySet;
 						foreach (IfcPropertyTemplate template in propertySetTemplate.HasPropertyTemplates)
 							aggregate.createOrFindPropertyTemplate(template, propertySet, ref changes);
+
+						if(propertySetTemplate.TemplateType != null)
+							propertySet.PropertySetType = propertySetTemplate.TemplateType.Value.ToString();
 					}
+					if(propertySetTemplate.ApplicableEntity != null)
+						variableSet.ApplicableType = propertySetTemplate.ApplicableEntity.Value.Value;
 				}
 				else
 				{ 
@@ -2593,22 +2601,22 @@ namespace IfcDoc
 			{
 				foreach (Definition def in mvd.Definitions)
 				{
-					if (def != null && def.Body != null && def.Body.Count == 1)
+					if (def != null && def.Body != null)
 					{
-						if (!String.IsNullOrEmpty(def.Body[0].Lang))
+						if (!String.IsNullOrEmpty(def.Body.Lang))
 						{
 							// mvdXML1.1 now uses this
 							DocLocalization loc = new DocLocalization();
 							doc.Localization.Add(loc);
 							loc.Name = def.Tags;
-							loc.Locale = def.Body[0].Lang;
-							loc.Documentation = def.Body[0].Content;
+							loc.Locale = def.Body.Lang;
+							loc.Documentation = def.Body.Content;
 							loc.Category = DocCategoryEnum.Definition;
 						}
 						else if (def.Body != null)
 						{
 							// base definition
-							doc.Documentation = def.Body[0].Content;
+							doc.Documentation = def.Body.Content;
 						}
 
 						if (def.Links != null)
@@ -2899,7 +2907,7 @@ namespace IfcDoc
 					{
 						ConceptTemplate mvdViewTemplate = new ConceptTemplate();
 						mvdViewTemplate.Name = "_" + docModelView.Name; // underscore indicates hidden
-						mvdViewTemplate.Code = docModelView.Uuid.ToString();
+						mvdViewTemplate.Uuid = docModelView.Uuid;
 						mvdViewTemplate.SubTemplates = new List<ConceptTemplate>();
 						mvd.Templates.Add(mvdViewTemplate);
 
@@ -3054,9 +3062,8 @@ namespace IfcDoc
 			if (documentation && doc.Documentation != null)
 			{
 				Definition mvdDef = new Definition();
-				mvdDef.Body = new List<Body>();
-				mvdDef.Body.Add(new Body());
-				mvdDef.Body[0].Content = doc.Documentation;
+				mvdDef.Body =  new Body();
+				mvdDef.Body.Content = doc.Documentation;
 
 				mvd.Definitions = new List<Definition>();
 				mvd.Definitions.Add(mvdDef);
@@ -3070,8 +3077,7 @@ namespace IfcDoc
 						//mvdLocalDef.Lang = docLocal.Locale;
 						//mvdLocalDef.Tags = docLocal.Name;
 						Body mvdBody = new Body();
-						mvdLocalDef.Body = new List<Body>();
-						mvdLocalDef.Body.Add(mvdBody);
+						mvdLocalDef.Body =  mvdBody;
 						mvdBody.Lang = docLocal.Locale;
 						mvdBody.Content = docLocal.Documentation;
 

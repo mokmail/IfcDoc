@@ -31,6 +31,7 @@ namespace BuildingSmart.Serialization.Xml
 		public string NameSpace { set { _NameSpace = value; } }
 		public string SchemaLocation { set { _SchemaLocation = value; } }
 
+		Dictionary<Type, PropertyInfo> _XmlTextMap = new Dictionary<Type, PropertyInfo>(); // cached property for innerText 
 		public XmlSerializer(Type typeProject) : base(typeProject, true)
 		{
 		}
@@ -179,13 +180,18 @@ namespace BuildingSmart.Serialization.Xml
 				if (!string.IsNullOrEmpty(reader.LocalName) && string.Compare(reader.LocalName, typename) != 0)
 				{
 					Type testType = GetTypeByName(reader.LocalName);
-					if (testType != null && testType.IsSubclassOf(t))
+					if (testType != null && (t == null || testType.IsSubclassOf(t)))
 						t = testType;
 				}
 			}
+
 			string r = reader.GetAttribute("href");
 			if (string.IsNullOrEmpty(r))
-				r = reader.GetAttribute("ref");
+			{
+				PropertyInfo refProperty = t == null ? null : GetFieldByName(t, "ref");
+				if(refProperty == null)
+					r = reader.GetAttribute("ref");
+			}
 			if (!string.IsNullOrEmpty(r))
 			{
 				object value = null;
@@ -200,7 +206,12 @@ namespace BuildingSmart.Serialization.Xml
 			}
 			if (t == null || t.IsValueType)
 			{
-				if (!reader.IsEmptyElement)
+				if (reader.IsEmptyElement)
+				{
+					if (propInfo != null && typeof(IEnumerable).IsAssignableFrom(propInfo.PropertyType))
+						return null;
+				}
+				else
 				{
 					bool hasvalue = false;
 					while (reader.Read())
@@ -332,6 +343,18 @@ namespace BuildingSmart.Serialization.Xml
 			{
 				if (reader.NodeType == XmlNodeType.Whitespace || reader.NodeType == XmlNodeType.Comment)
 					continue;
+				if(reader.NodeType == XmlNodeType.CDATA)
+				{
+					if (t != null)
+					{
+						PropertyInfo textProperty = detectTextAttribute(t);
+						if (textProperty != null)
+						{
+							LoadEntityValue(entity, textProperty, reader.Value);
+						}
+					}
+					continue;
+				}
 				if(reader.NodeType == XmlNodeType.EndElement)
 				{
 					//System.Diagnostics.Debug.WriteLine(new string(' ', indent) + "!!ReadEntity " + readerLocalName + " " + (t == null ? "" : ": " + t.Name + ".") + reader.LocalName + " " + entity.ToString() + " " + reader.NodeType);
@@ -421,7 +444,27 @@ namespace BuildingSmart.Serialization.Xml
 				propertyInfo = GetInverseByName(type, propertyInfoName);
 			return propertyInfo;
 		}
-		
+		public PropertyInfo detectTextAttribute(Type type)
+		{
+			PropertyInfo result = null;
+			if (_XmlTextMap.TryGetValue(type, out result))
+				return result;
+			PropertyInfo[] properties = type.GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+			foreach (PropertyInfo property in properties)
+			{
+				XmlTextAttribute xmlTextAttribute = property.GetCustomAttribute<XmlTextAttribute>();
+				if (xmlTextAttribute != null)
+				{
+					_XmlTextMap[type] = property;
+					return property;
+				}	
+			}
+			Type baseType = type.BaseType;
+			if (baseType != typeof(object) && baseType != typeof(Serializer))
+				return detectTextAttribute(baseType);
+			_XmlTextMap[type] = null;
+			return null;
+		}
 
 		private void LoadCollectionValue(IEnumerable list, object v)
 		{
@@ -788,6 +831,7 @@ namespace BuildingSmart.Serialization.Xml
 				}
 			}
 			bool close = this.WriteEntityAttributes(writer, ref indent, o, propertiesToIgnore, queue, isIdPass);
+
 			if (close)
 			{
 				this.WriteEndElementEntity(writer, ref indent, name);
@@ -1265,6 +1309,20 @@ namespace BuildingSmart.Serialization.Xml
 				}
 				foreach (object obj in enumerable)
 					WriteEntity(writer, ref indent, obj, propertiesToIgnore, queue, isIdPass, "", "");
+			}
+			else if (!isIdPass)
+			{
+				PropertyInfo property = detectTextAttribute(t);
+				if(property != null)
+				{
+					object obj = property.GetValue(o);
+					if (!open)
+					{
+						WriteOpenElement(writer);
+						open = true;
+					}
+					WriteEntity(writer, ref indent, obj.ToString(), propertiesToIgnore, queue, isIdPass, "", "");
+				}
 			}
 			if (!open)
 			{

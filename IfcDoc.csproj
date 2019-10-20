@@ -184,23 +184,17 @@
     <Compile Include="FormSaveFolder.Designer.cs">
       <DependentUpon>FormSaveFolder.cs</DependentUpon>
     </Compile>
-    <Compile Include="FormSelectPropertyConstant.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="FormSelectPropertyConstant.Designer.cs">
-      <DependentUpon>FormSelectPropertyConstant.cs</DependentUpon>
-    </Compile>
     <Compile Include="FormSelectProperty.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="FormSelectProperty.Designer.cs">
       <DependentUpon>FormSelectProperty.cs</DependentUpon>
     </Compile>
-    <Compile Include="FormSelectConstant.cs">
+    <Compile Include="FormSelectGeneric.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="FormSelectConstant.Designer.cs">
-      <DependentUpon>FormSelectConstant.cs</DependentUpon>
+    <Compile Include="FormSelectGeneric.Designer.cs">
+      <DependentUpon>FormSelectGeneric.cs</DependentUpon>
     </Compile>
     <Compile Include="FormSelectQuantity.cs">
       <SubType>Form</SubType>
@@ -298,12 +292,6 @@
     </Compile>
     <Compile Include="FormSelectLocale.Designer.cs">
       <DependentUpon>FormSelectLocale.cs</DependentUpon>
-    </Compile>
-    <Compile Include="FormSelectPropertyEnum.cs">
-      <SubType>Form</SubType>
-    </Compile>
-    <Compile Include="FormSelectPropertyEnum.Designer.cs">
-      <DependentUpon>FormSelectPropertyEnum.cs</DependentUpon>
     </Compile>
     <Compile Include="FormSelectSchema.cs">
       <SubType>Form</SubType>
@@ -439,9 +427,6 @@
     <EmbeddedResource Include="FormSaveFolder.resx">
       <DependentUpon>FormSaveFolder.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="FormSelectPropertyConstant.resx">
-      <DependentUpon>FormSelectPropertyConstant.cs</DependentUpon>
-    </EmbeddedResource>
     <EmbeddedResource Include="FormSelectEntity.ja.resx">
       <DependentUpon>FormSelectEntity.cs</DependentUpon>
     </EmbeddedResource>
@@ -451,8 +436,8 @@
     <EmbeddedResource Include="FormSelectProperty.resx">
       <DependentUpon>FormSelectProperty.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="FormSelectConstant.resx">
-      <DependentUpon>FormSelectConstant.cs</DependentUpon>
+    <EmbeddedResource Include="FormSelectGeneric.resx">
+      <DependentUpon>FormSelectGeneric.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormSelectQuantity.resx">
       <DependentUpon>FormSelectQuantity.cs</DependentUpon>
@@ -508,9 +493,6 @@
     <EmbeddedResource Include="FormSelectLocale.resx">
       <DependentUpon>FormSelectLocale.cs</DependentUpon>
       <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="FormSelectPropertyEnum.resx">
-      <DependentUpon>FormSelectPropertyEnum.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormSelectSchema.resx">
       <DependentUpon>FormSelectSchema.cs</DependentUpon>

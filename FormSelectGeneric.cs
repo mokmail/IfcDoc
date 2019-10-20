@@ -1,4 +1,4 @@
-﻿// Name:        FormSelectConstant.cs
+﻿// Name:        FormSelectGeneric.cs
 // Description: Dialog box for selecting enumeration
 // Copyright:   (c) 2013 BuildingSmart International Ltd.
 // License:     http://www.buildingsmart-tech.org/legal
@@ -16,31 +16,40 @@ using IfcDoc.Schema.DOC;
 
 namespace IfcDoc
 {
-	public partial class FormSelectPropertyConstant : Form
+	public partial class FormSelectGeneric<T> : Form where T : DocObject
 	{
 		DocProject m_project;
 
-		public FormSelectPropertyConstant()
+		public FormSelectGeneric()
 		{
 			InitializeComponent();
+			this.Text = "Select " + typeof(T).Name.Substring(3);
 		}
 
-		public FormSelectPropertyConstant(DocProject project, DocPropertyConstant selection) : this()
+
+		public FormSelectGeneric(DocProject project, T selection, List<T> list) : this()
 		{
 			this.m_project = project;
 
-			Dictionary<string, DocPropertyConstant> processed = new Dictionary<string, DocPropertyConstant>();
+			Dictionary<string, T> processed = new Dictionary<string, T>();
 
-			foreach (DocPropertyConstant constant in project.PropertyConstants)
+			foreach (T generic in list)
 			{
 				ListViewItem lvi = new ListViewItem();
 				lvi.Tag = constant;
-				lvi.Text = constant.Name + (processed.ContainsKey(constant.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format( constant.Uuid) : "");
-				processed[constant.Name] = constant;
+				if (constant.Name != null)
+				{
+					lvi.Text = constant.Name +  (processed.ContainsKey(constant.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format( constant.Uuid) : "");
+				}
+				else
+				{
+					lvi.Text = (processed.ContainsKey(constant.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format(constant.Uuid) : "");
+				}
+
 				lvi.ImageIndex = 0;
 				this.listView.Items.Add(lvi);
 
-				if (selection == constant)
+				if (selection == generic)
 				{
 					lvi.Selected = true;
 				}
@@ -57,13 +66,13 @@ namespace IfcDoc
 			}
 		}
 
-		public DocPropertyConstant Selection
+		public T Selection
 		{
 			get
 			{
 				if (this.listView.SelectedItems.Count == 1)
 				{
-					return this.listView.SelectedItems[0].Tag as DocPropertyConstant;
+					return this.listView.SelectedItems[0].Tag as T;
 				}
 				return null;
 			}

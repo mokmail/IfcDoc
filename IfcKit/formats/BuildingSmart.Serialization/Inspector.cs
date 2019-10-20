@@ -180,9 +180,9 @@ namespace BuildingSmart.Serialization
 					else
 					{
 						XmlTypeAttribute xmlType = t.GetCustomAttribute<XmlTypeAttribute>();
-						if(xmlType != null && !string.IsNullOrEmpty(xmlType.TypeName) && !_typemap.ContainsKey(xmlType.TypeName))
+						if(xmlType != null && !string.IsNullOrEmpty(xmlType.TypeName) && !_typemap.ContainsKey(xmlType.TypeName.ToUpper()))
 						{
-							_typemap.Add(xmlType.TypeName, t);
+							_typemap.Add(xmlType.TypeName.ToUpper(), t);
 						}
 						else if (!_typemap.ContainsKey(name))
 						{

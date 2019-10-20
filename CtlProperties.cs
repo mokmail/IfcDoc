@@ -1113,7 +1113,7 @@ namespace IfcDoc
 			if (docTemplate.PropertyType == DocPropertyTemplateTypeEnum.P_ENUMERATEDVALUE)
 			{
 				// browse for property enumeration
-				using (FormSelectPropertyEnum form = new FormSelectPropertyEnum(this.m_project, docEnum))
+				using (FormSelectGeneric<DocPropertyEnumeration> form = new FormSelectGeneric<DocPropertyEnumeration>(m_project, docEnum, m_project.PropertyEnumerations))
 				{
 					if (form.ShowDialog(this) == System.Windows.Forms.DialogResult.OK)
 					{

@@ -4659,7 +4659,7 @@ namespace IfcDoc
 
 		private void toolStripMenuItemContextIncludeConstant_Click(object sender, EventArgs e)
 		{
-			using (FormSelectConstant form = new FormSelectConstant(this.m_project, null))
+			using (FormSelectGeneric<DocConstant> form = new FormSelectGeneric<DocConstant>(m_project, null, m_project.Constants))
 			{
 				if (form.ShowDialog(this) == DialogResult.OK && form.Selection != null)
 				{
@@ -4676,7 +4676,7 @@ namespace IfcDoc
 
 		private void toolStripMenuItemContextIncludePropertyConstant_Click(object sender, EventArgs e)
 		{
-			using (FormSelectPropertyConstant form = new FormSelectPropertyConstant(this.m_project, null))
+			using (FormSelectGeneric<DocPropertyConstant> form = new FormSelectGeneric<DocPropertyConstant>(m_project, null, m_project.PropertyConstants))
 			{
 				if (form.ShowDialog(this) == DialogResult.OK && form.Selection != null)
 				{

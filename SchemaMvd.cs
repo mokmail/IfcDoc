@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Text;
 using System.Xml.Serialization;
 using System.Runtime.Serialization;
@@ -99,6 +100,15 @@ namespace IfcDoc.Schema.MVD
 		[DataMember(Order = 5), XmlAttribute("author")] public string Author { get; set; }
 		[DataMember(Order = 6), XmlAttribute("owner")] public string Owner { get; set; } // e.g. 'buildingSMART international'
 		[DataMember(Order = 7), XmlAttribute("copyright")] public string Copyright { get; set; }
+
+		public bool ShouldSerializeUuid()
+		{
+			return Uuid != Guid.Empty;
+		}
+		public bool ShouldSerializeStatus()
+		{
+			return Status != StatusEnum.Sample;
+		}
 	}
 
 	public abstract class Element : Identity
@@ -108,6 +118,11 @@ namespace IfcDoc.Schema.MVD
 		public Element()
 		{
 			Definitions = new List<Definition>();
+		}
+
+		public bool ShouldSerializeDefinitions()
+		{
+			return null != this.Definitions && this.Definitions.Any();
 		}
 	}
 
@@ -155,6 +170,15 @@ namespace IfcDoc.Schema.MVD
 			Rules = new List<AttributeRule>();
 			SubTemplates = new List<ConceptTemplate>();
 		}
+
+		public bool ShouldSerializeRules()
+		{
+			return null != this.Rules &&  this.Rules.Any();
+		}
+		public bool ShouldSerializeSubTemplates()
+		{
+			return null != this.SubTemplates && this.SubTemplates.Any();
+		}
 	}
 
 	// used to map xpath
@@ -184,6 +208,14 @@ namespace IfcDoc.Schema.MVD
 		{
 			Requirements = new List<ConceptRequirement>();
 			SubConcepts = new List<Concept>();
+		}
+		public bool ShouldSerializeSubConcepts()
+		{
+			return null != this.SubConcepts && this.SubConcepts.Any();
+		}
+		public bool ShouldSerializeRequirements()
+		{
+			return null != this.Requirements && this.Requirements.Any();
 		}
 	}
 
@@ -238,13 +270,12 @@ namespace IfcDoc.Schema.MVD
 	[XmlType("Definition")]
 	public class Definition : SEntity
 	{
-		[DataMember(Order = 0), XmlElement("Body")] public List<Body> Body { get; set; }
+		[DataMember(Order = 0), XmlElement("Body")] public Body Body { get; set; }
 		[DataMember(Order = 1), XmlElement("Link")] public List<Link> Links { get; set; }
 		[DataMember(Order = 2), XmlAttribute("tags")] public string Tags { get; set; }
 		
 		public Definition()
 		{
-			Body = new List<Body>();
 			Links = new List<Link>();
 		}
 	}
@@ -252,20 +283,20 @@ namespace IfcDoc.Schema.MVD
 	public class Body : SEntity,
 		IXmlSerializable
 	{
-		[DataMember(Order = 0), XmlIgnore] public string Content { get; set; }
+		[XmlIgnore] public string Content { get; set; }
 		[DataMember(Order = 1), XmlAttribute("lang")] public string Lang { get; set; }
 		[DataMember(Order = 2), XmlAttribute("tags")] public string Tags { get; set; }
 
-		[XmlElement("Content", Order = 0)]
-		public System.Xml.XmlCDataSection ContentCDATA
+		[XmlText]
+		public string ContentCDATA
 		{
 			get
 			{
-				return new System.Xml.XmlDocument().CreateCDataSection(Content);
+				return new System.Xml.XmlDocument().CreateCDataSection(Content).ToString();
 			}
 			set
 			{
-				Content  = value.Value;
+				Content = value;
 			}
 		}
 		#region IXmlSerializable Members
@@ -288,6 +319,11 @@ namespace IfcDoc.Schema.MVD
 			{
 				writer.WriteAttributeString("lang", this.Lang);
 			}
+			if (!String.IsNullOrEmpty(this.Tags))
+			{
+				writer.WriteAttributeString("tags", this.Tags);
+			}
+
 			writer.WriteCData(this.Content);
 		}
 
@@ -357,6 +393,15 @@ namespace IfcDoc.Schema.MVD
 			EntityRules = new List<EntityRule>();
 			Constraints = new List<Constraint>();
 		}
+
+		public bool ShouldSerializeEntityRules()
+		{
+			return null != this.EntityRules && this.EntityRules.Any();
+		}
+		public bool ShouldSerializeConstraints()
+		{
+			return null != this.Constraints && this.Constraints.Any();
+		}
 	}
 
 	[XmlType("EntityRule")]
@@ -371,6 +416,15 @@ namespace IfcDoc.Schema.MVD
 		{
 			AttributeRules = new List<AttributeRule>();
 			Constraints = new List<Constraint>();
+		}
+
+		public bool ShouldSerializeAttributeRules()
+		{
+			return null != this.AttributeRules && this.AttributeRules.Any();
+		}
+		public bool ShouldSerializeConstraints()
+		{
+			return null != this.Constraints && this.Constraints.Any();
 		}
 	}
 
