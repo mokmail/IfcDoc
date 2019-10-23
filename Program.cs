@@ -2182,6 +2182,10 @@ namespace IfcDoc
 					//ImportMvdCardinality(docRule, mvdRule.Cardinality);
 					docRule.Rules.Add(docRuleEntity);
 					docRuleEntity.ParentRule = docRule;
+					if (mvdEntityRule.References != null)
+					{
+						docRuleEntity.Prefix = mvdEntityRule.References.IdPrefix;
+					}
 
 					if (mvdEntityRule.AttributeRules != null)
 					{
