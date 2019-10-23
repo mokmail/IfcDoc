@@ -1237,7 +1237,12 @@ namespace IfcDoc
 					DocProperty docPset = (DocProperty)this.treeView.SelectedNode.Parent.Tag;
 					docPset.Elements.Remove(docTarget);
 				}
+				this.m_project.Properties.Remove(docTarget);
 				this.treeView.SelectedNode.Remove();
+				if (this.treeView.SelectedNode.Nodes.Count == 0)
+				{
+					this.treeView.SelectedNode.Remove();
+				}
 				docTarget.Delete();
 			}
 			else if (this.treeView.SelectedNode.Tag is DocPropertyEnumeration)
@@ -1250,8 +1255,16 @@ namespace IfcDoc
 			else if (this.treeView.SelectedNode.Tag is DocPropertyConstant)
 			{
 				DocPropertyConstant docTarget = (DocPropertyConstant)this.treeView.SelectedNode.Tag;
-				DocPropertyEnumeration docPset = (DocPropertyEnumeration)this.treeView.SelectedNode.Parent.Tag;
-				docPset.Constants.Remove(docTarget);
+				if (docTarget.PartOfEnumeration.Count != 0)
+				{
+					foreach(DocPropertyEnumeration docEnumeration in docTarget.PartOfEnumeration)
+					{
+						docEnumeration.Constants.Remove(docTarget);
+					}
+					//DocPropertyEnumeration docPset = (DocPropertyEnumeration)this.treeView.SelectedNode.Parent.Tag;
+					//docPset.Constants.Remove(docTarget);
+				}
+				this.m_project.PropertyConstants.Remove(docTarget);
 				this.treeView.SelectedNode.Remove();
 				docTarget.Delete();
 			}
@@ -2300,7 +2313,7 @@ namespace IfcDoc
 			}
 
 			TreeNode tnPropertiesHeader = LoadNode(null, typeof(DocProperty), "Properties", false);
-			groups = m_project.Properties.GroupBy(x => char.ToLower(x.Name[0]));
+			groups = m_project.Properties.GroupBy(x => x.Name == null || x.Name == "" ? ' ' : char.ToLower(x.Name[0]));
 			foreach (IGrouping<char, DocObject> group in groups)
 			{
 				TreeNode tnAlpha = LoadNode(tnPropertiesHeader, typeof(DocProperty), group.Key.ToString(), false);
@@ -3038,9 +3051,9 @@ namespace IfcDoc
 					this.toolStripMenuItemEditDelete.Enabled = true;
 					this.toolStripMenuItemEditRename.Enabled = false;
 				}
-				else if (obj is DocConstant)
+				else if (obj is DocConstant docConst)
 				{
-					DocConstant docConst = (DocConstant)obj;
+					//DocConstant docConst = (DocConstant)obj;
 					if (e.Node.Parent.Tag != typeof(DocConstant))
 					{
 						this.toolStripMenuItemContextRemove.Visible = true;
@@ -3143,9 +3156,9 @@ namespace IfcDoc
                     this.toolStripMenuItemInsertConceptQset.Enabled = true;
                 }
 #endif
-				else if (obj is DocPropertyConstant)
+				else if (obj is DocPropertyConstant constant)
 				{
-					DocPropertyConstant constant = (DocPropertyConstant)obj;
+					//DocPropertyConstant constant = (DocPropertyConstant)obj;
 					if (e.Node.Parent.Tag != typeof(DocPropertyConstant))
 					{
 						this.toolStripMenuItemContextRemove.Visible = true;
@@ -3634,7 +3647,7 @@ namespace IfcDoc
 				{
 					this.ctlExpressG.Project = this.m_project;
 					this.ctlExpressG.Schema = docSchema;
-					this.ctlExpressG.Selection = obj;
+					//this.ctlExpressG.Selection = obj;
 					this.ctlExpressG.Visible = true;
 				}
 

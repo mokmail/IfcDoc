@@ -111,6 +111,12 @@ namespace BuildingSmart.Serialization.Xml
 		}
 		private object ReadEntity(XmlReader reader, object parent, PropertyInfo propInfo, IDictionary<string, object> instances, string typename, QueuedObjects queuedObjects, bool nestedElementDefinition, int indent)
 		{
+			IXmlLineInfo readerInfo = (IXmlLineInfo)reader;
+			if (readerInfo.LineNumber == 6759)
+			{
+				bool s = true;
+			}
+
 			string readerLocalName = reader.LocalName;
 			if (readerLocalName == "TemplateRules")
 			{

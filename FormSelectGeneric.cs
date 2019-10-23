@@ -32,13 +32,20 @@ namespace IfcDoc
 			this.m_project = project;
 
 			Dictionary<string, T> processed = new Dictionary<string, T>();
-			
+
 			foreach (T generic in list)
 			{
 				ListViewItem lvi = new ListViewItem();
-				lvi.Tag = generic;
-				lvi.Text = generic.Name +  (processed.ContainsKey(generic.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format(generic.Uuid) : "");
-				lvi.ToolTipText = generic.Documentation;
+				lvi.Tag = constant;
+				if (constant.Name != null)
+				{
+					lvi.Text = constant.Name +  (processed.ContainsKey(constant.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format( constant.Uuid) : "");
+				}
+				else
+				{
+					lvi.Text = (processed.ContainsKey(constant.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format(constant.Uuid) : "");
+				}
+
 				lvi.ImageIndex = 0;
 				this.listView.Items.Add(lvi);
 
