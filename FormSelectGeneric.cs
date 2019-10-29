@@ -36,14 +36,14 @@ namespace IfcDoc
 			foreach (T generic in list)
 			{
 				ListViewItem lvi = new ListViewItem();
-				lvi.Tag = constant;
-				if (constant.Name != null)
+				lvi.Tag = generic;
+				if (generic.Name != null)
 				{
-					lvi.Text = constant.Name +  (processed.ContainsKey(constant.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format( constant.Uuid) : "");
+					lvi.Text = generic.Name +  (processed.ContainsKey(generic.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format(generic.Uuid) : "");
 				}
 				else
 				{
-					lvi.Text = (processed.ContainsKey(constant.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format(constant.Uuid) : "");
+					lvi.Text = (processed.ContainsKey(generic.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format(generic.Uuid) : "");
 				}
 
 				lvi.ImageIndex = 0;

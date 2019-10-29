@@ -1,4 +1,6 @@
-﻿namespace IfcDoc
+﻿using IfcDoc.Schema.DOC;
+
+namespace IfcDoc
 {
 	partial class FormSelectGeneric<T>
 	{
@@ -28,65 +30,65 @@
 		/// </summary>
 		private void InitializeComponent()
 		{
-			this.components = new System.ComponentModel.Container();
-			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormSelectGeneric<T>));
-			this.buttonCancel = new System.Windows.Forms.Button();
-			this.buttonOK = new System.Windows.Forms.Button();
-			this.listView = new System.Windows.Forms.ListView();
-			this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-			this.imageList1 = new System.Windows.Forms.ImageList(this.components);
-			this.SuspendLayout();
-			// 
-			// buttonCancel
-			// 
-			resources.ApplyResources(this.buttonCancel, "buttonCancel");
-			this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-			this.buttonCancel.Name = "buttonCancel";
-			this.buttonCancel.UseVisualStyleBackColor = true;
-			// 
-			// buttonOK
-			// 
-			resources.ApplyResources(this.buttonOK, "buttonOK");
-			this.buttonOK.DialogResult = System.Windows.Forms.DialogResult.OK;
-			this.buttonOK.Name = "buttonOK";
-			this.buttonOK.UseVisualStyleBackColor = true;
-			// 
-			// listView
-			// 
-			resources.ApplyResources(this.listView, "listView");
-			this.listView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
-			this.columnHeader1});
-			this.listView.HideSelection = false;
-			this.listView.MultiSelect = false;
-			this.listView.Name = "listView";
-			this.listView.SmallImageList = this.imageList1;
-			this.listView.UseCompatibleStateImageBehavior = false;
-			this.listView.View = System.Windows.Forms.View.Details;
-			// 
-			// columnHeader1
-			// 
-			resources.ApplyResources(this.columnHeader1, "columnHeader1");
-			// 
-			// imageList1
-			// 
-			this.imageList1.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList1.ImageStream")));
-			this.imageList1.TransparentColor = System.Drawing.Color.Magenta;
-			this.imageList1.Images.SetKeyName(0, "DocEnumeration.bmp");
-			// 
-			// FormSelectPropertyEnum
-			// 
-			this.AcceptButton = this.buttonOK;
-			resources.ApplyResources(this, "$this");
-			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-			this.CancelButton = this.buttonCancel;
-			this.Controls.Add(this.listView);
-			this.Controls.Add(this.buttonCancel);
-			this.Controls.Add(this.buttonOK);
-			this.MaximizeBox = false;
-			this.MinimizeBox = false;
-			this.Name = "FormSelectPropertyEnum";
-			this.ShowInTaskbar = false;
-			this.ResumeLayout(false);
+            this.components = new System.ComponentModel.Container();
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormSelectGeneric<DocObject>));
+            this.buttonCancel = new System.Windows.Forms.Button();
+            this.buttonOK = new System.Windows.Forms.Button();
+            this.listView = new System.Windows.Forms.ListView();
+            this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.imageList1 = new System.Windows.Forms.ImageList(this.components);
+            this.SuspendLayout();
+            // 
+            // buttonCancel
+            // 
+            resources.ApplyResources(this.buttonCancel, "buttonCancel");
+            this.buttonCancel.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.buttonCancel.Name = "buttonCancel";
+            this.buttonCancel.UseVisualStyleBackColor = true;
+            // 
+            // buttonOK
+            // 
+            resources.ApplyResources(this.buttonOK, "buttonOK");
+            this.buttonOK.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.buttonOK.Name = "buttonOK";
+            this.buttonOK.UseVisualStyleBackColor = true;
+            // 
+            // listView
+            // 
+            resources.ApplyResources(this.listView, "listView");
+            this.listView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.columnHeader1});
+            this.listView.HideSelection = false;
+            this.listView.MultiSelect = false;
+            this.listView.Name = "listView";
+            this.listView.SmallImageList = this.imageList1;
+            this.listView.UseCompatibleStateImageBehavior = false;
+            this.listView.View = System.Windows.Forms.View.Details;
+            // 
+            // columnHeader1
+            // 
+            resources.ApplyResources(this.columnHeader1, "columnHeader1");
+            // 
+            // imageList1
+            // 
+            this.imageList1.ImageStream = ((System.Windows.Forms.ImageListStreamer)(resources.GetObject("imageList1.ImageStream")));
+            this.imageList1.TransparentColor = System.Drawing.Color.Magenta;
+            this.imageList1.Images.SetKeyName(0, "DocEnumeration.bmp");
+            // 
+            // FormSelectGeneric
+            // 
+            this.AcceptButton = this.buttonOK;
+            resources.ApplyResources(this, "$this");
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.CancelButton = this.buttonCancel;
+            this.Controls.Add(this.listView);
+            this.Controls.Add(this.buttonCancel);
+            this.Controls.Add(this.buttonOK);
+            this.MaximizeBox = false;
+            this.MinimizeBox = false;
+            this.Name = "FormSelectGeneric";
+            this.ShowInTaskbar = false;
+            this.ResumeLayout(false);
 
 		}
 
