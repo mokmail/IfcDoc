@@ -2608,6 +2608,7 @@ namespace IfcDoc
 			this.toolStripMenuItemContextInsertSchema.Visible = false;
 			this.toolStripMenuItemContextInsertDefined.Visible = false;
 			this.toolStripMenuItemContextInsertSelect.Visible = false;
+			this.toolStripMenuItemContextInsertSelectItem.Visible = false;
 			this.toolStripMenuItemContextInsertEnumeration.Visible = false;
 			this.toolStripMenuItemContextInsertConstant.Visible = false;
 			this.toolStripMenuItemContextInsertEntity.Visible = false;
@@ -3039,6 +3040,8 @@ namespace IfcDoc
 					else if (obj is DocSelect)
 					{
 						DocSelect docSel = (DocSelect)obj;
+						this.toolStripMenuItemContextInsert.Visible = true;
+						this.toolStripMenuItemContextInsertSelectItem.Visible = true;
 					}
 					else if (obj is DocDefined)
 					{
@@ -4691,6 +4694,11 @@ namespace IfcDoc
 			}
 		}
 
+		private void toolStripMenuItemContextInsertSelectItem_Click(object sender, EventArgs e)
+		{
+
+		}
+
 		private void toolStripMenuItemContextIncludeQuantity_Click(object sender, EventArgs e)
 		{
 			using (FormSelectQuantity form = new FormSelectQuantity(null, this.m_project, false))
@@ -4840,8 +4848,8 @@ namespace IfcDoc
 
 		private void backgroundWorker_DoWork(object sender, DoWorkEventArgs e)
 		{
-			try
-			{
+			//try
+			//{
 				// build dictionary to map IFC type name to entity and schema                
 				Dictionary<string, DocObject> mapEntity = new Dictionary<string, DocObject>();
 
@@ -4861,11 +4869,11 @@ namespace IfcDoc
 					if(!string.IsNullOrEmpty(indexPath))
 						System.Diagnostics.Process.Start(indexPath);
 				}
-			}
-			catch (Exception ex)
-			{
-				this.m_exception = ex;
-			}
+			//}
+			//catch (Exception ex)
+			//{
+			//	this.m_exception = ex;
+			//}
 		}
 
 		private void backgroundWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -6862,7 +6870,7 @@ namespace IfcDoc
 						}
 					}
 
-					if (docAttr.DiagramLine.Count == 0 && docAttr.Definition.DiagramRectangle != null)
+					if (docAttr.DiagramLine.Count == 0 && docAttr.Definition.DiagramRectangle != null && docEntity.DiagramRectangle != null)
 					{
 						docAttr.DiagramLine.Add(new DocPoint(docEntity.DiagramRectangle.X + docEntity.DiagramRectangle.Width, docAttr.Definition.DiagramRectangle.Y + docAttr.Definition.DiagramRectangle.Height / 2));
 						docAttr.DiagramLine.Add(new DocPoint(docAttr.Definition.DiagramRectangle.X, docAttr.Definition.DiagramRectangle.Y + docAttr.Definition.DiagramRectangle.Height / 2));
@@ -10295,7 +10303,5 @@ namespace IfcDoc
 
 			this.LoadTree();
 		}
-		
 	}
-
 }
