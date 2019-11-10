@@ -1,8 +1,6 @@
-﻿using IfcDoc.Schema.DOC;
-
-namespace IfcDoc
+﻿namespace IfcDoc
 {
-	partial class FormSelectGeneric<T>
+	partial class FormSelect
 	{
 		/// <summary>
 		/// Required designer variable.
@@ -31,7 +29,7 @@ namespace IfcDoc
 		private void InitializeComponent()
 		{
             this.components = new System.ComponentModel.Container();
-            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.CustomComponentResourceManager(typeof(FormSelectGeneric<T>), "FormSelectGeneric");
+            System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(FormSelect));
             this.buttonCancel = new System.Windows.Forms.Button();
             this.buttonOK = new System.Windows.Forms.Button();
             this.listView = new System.Windows.Forms.ListView();
@@ -75,7 +73,7 @@ namespace IfcDoc
             this.imageList1.TransparentColor = System.Drawing.Color.Magenta;
             this.imageList1.Images.SetKeyName(0, "DocEnumeration.bmp");
             // 
-            // FormSelectGeneric
+            // FormSelect
             // 
             this.AcceptButton = this.buttonOK;
             resources.ApplyResources(this, "$this");
@@ -86,7 +84,7 @@ namespace IfcDoc
             this.Controls.Add(this.buttonOK);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
-            this.Name = "FormSelectGeneric";
+            this.Name = "FormSelect";
             this.ShowInTaskbar = false;
             this.ResumeLayout(false);
 
@@ -96,9 +94,8 @@ namespace IfcDoc
 
 		private System.Windows.Forms.Button buttonCancel;
 		private System.Windows.Forms.Button buttonOK;
-		private System.Windows.Forms.ListView listView;
 		private System.Windows.Forms.ColumnHeader columnHeader1;
 		private System.Windows.Forms.ImageList imageList1;
+		protected System.Windows.Forms.ListView listView;
 	}
-
 }

@@ -184,17 +184,20 @@
     <Compile Include="FormSaveFolder.Designer.cs">
       <DependentUpon>FormSaveFolder.cs</DependentUpon>
     </Compile>
+    <Compile Include="FormSelectGeneric.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="FormSelectProperty.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="FormSelectProperty.Designer.cs">
       <DependentUpon>FormSelectProperty.cs</DependentUpon>
     </Compile>
-    <Compile Include="FormSelectGeneric.cs">
+    <Compile Include="FormSelect.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="FormSelectGeneric.Designer.cs">
-      <DependentUpon>FormSelectGeneric.cs</DependentUpon>
+    <Compile Include="FormSelect.Designer.cs">
+      <DependentUpon>FormSelect.cs</DependentUpon>
     </Compile>
     <Compile Include="FormSelectQuantity.cs">
       <SubType>Form</SubType>
@@ -437,8 +440,8 @@
     <EmbeddedResource Include="FormSelectProperty.resx">
       <DependentUpon>FormSelectProperty.cs</DependentUpon>
     </EmbeddedResource>
-    <EmbeddedResource Include="FormSelectGeneric.resx">
-      <DependentUpon>FormSelectGeneric.cs</DependentUpon>
+    <EmbeddedResource Include="FormSelect.resx">
+      <DependentUpon>FormSelect.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="FormSelectQuantity.resx">
       <DependentUpon>FormSelectQuantity.cs</DependentUpon>
