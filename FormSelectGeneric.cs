@@ -16,7 +16,7 @@ using IfcDoc.Schema.DOC;
 
 namespace IfcDoc
 {
-	public partial class FormSelectGeneric<T> : Form where T : DocObject
+	public partial class FormSelectGeneric<T> : FormSelectGeneric where T : DocObject
 	{
 		DocProject m_project;
 
@@ -43,7 +43,7 @@ namespace IfcDoc
 				}
 				else
 				{
-					lvi.Text = (processed.ContainsKey(generic.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format(generic.Uuid) : "");
+					lvi.Text = "";
 				}
 
 				lvi.ImageIndex = 0;
@@ -77,5 +77,8 @@ namespace IfcDoc
 				return null;
 			}
 		}
+	}
+	public class FormSelectGeneric : Form
+	{
 	}
 }
