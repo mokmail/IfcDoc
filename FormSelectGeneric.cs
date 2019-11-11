@@ -1,34 +1,22 @@
-﻿// Name:        FormSelectGeneric.cs
-// Description: Dialog box for selecting enumeration
-// Copyright:   (c) 2013 BuildingSmart International Ltd.
-// License:     http://www.buildingsmart-tech.org/legal
-
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
+
 using System.Windows.Forms;
 
 using IfcDoc.Schema.DOC;
 
 namespace IfcDoc
 {
-	public partial class FormSelectGeneric<T> : Form where T : DocObject
+	public partial class FormSelectGeneric<T> : FormSelect where T : DocObject
 	{
 		DocProject m_project;
 
-		public FormSelectGeneric()
+		public FormSelectGeneric(DocProject project, T selection, List<T> list) : base()
 		{
-			InitializeComponent();
 			this.Text = "Select " + typeof(T).Name.Substring(3);
-		}
-
-
-		public FormSelectGeneric(DocProject project, T selection, List<T> list) : this()
-		{
 			this.m_project = project;
 
 			Dictionary<string, T> processed = new Dictionary<string, T>();
@@ -36,14 +24,14 @@ namespace IfcDoc
 			foreach (T generic in list)
 			{
 				ListViewItem lvi = new ListViewItem();
-				lvi.Tag = constant;
-				if (constant.Name != null)
+				lvi.Tag = generic;
+				if (!string.IsNullOrEmpty(generic.Name))
 				{
-					lvi.Text = constant.Name +  (processed.ContainsKey(constant.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format( constant.Uuid) : "");
+					lvi.Text = generic.Name + (processed.ContainsKey(generic.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format(generic.Uuid) : "");
 				}
 				else
 				{
-					lvi.Text = (processed.ContainsKey(constant.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format(constant.Uuid) : "");
+					lvi.Text = BuildingSmart.Utilities.Conversion.GlobalId.Format(generic.Uuid);
 				}
 
 				lvi.ImageIndex = 0;
@@ -56,16 +44,7 @@ namespace IfcDoc
 			}
 		}
 
-		protected override void OnLoad(EventArgs e)
-		{
-			base.OnLoad(e);
-
-			if (this.listView.SelectedItems.Count == 1)
-			{
-				this.listView.SelectedItems[0].EnsureVisible();
-			}
-		}
-
+	
 		public T Selection
 		{
 			get
