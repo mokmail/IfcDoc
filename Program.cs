@@ -2343,7 +2343,7 @@ namespace IfcDoc
 						if (mvdRoot.Applicability.TemplateRules != null)
 						{
 							docConceptRoot.ApplicableOperator = (DocTemplateOperator)Enum.Parse(typeof(TemplateOperator), mvdRoot.Applicability.TemplateRules.Operator.ToString());
-							foreach (TemplateRule r in mvdRoot.Applicability.TemplateRules.TemplateRule)
+							foreach (TemplateRule r in mvdRoot.Applicability.TemplateRules.OfType<TemplateRule>())
 							{
 								DocTemplateItem docItem = ImportMvdItem(r, docProject, mapExchange);
 								docConceptRoot.ApplicableItems.Add(docItem);
@@ -2452,7 +2452,7 @@ namespace IfcDoc
 			if (mvdNode.TemplateRules != null)
 			{
 				docUse.Operator = (DocTemplateOperator)Enum.Parse(typeof(DocTemplateOperator), mvdNode.TemplateRules.Operator.ToString());
-				foreach (TemplateRule rule in mvdNode.TemplateRules.TemplateRule)
+				foreach (TemplateRule rule in mvdNode.TemplateRules.OfType<TemplateRule>())
 				{
 					DocTemplateItem docItem = ImportMvdItem(rule, docProject, mapExchange);
 					docUse.Items.Add(docItem);
@@ -2781,7 +2781,7 @@ namespace IfcDoc
 				foreach (DocTemplateItem docRule in docTemplateUsage.Items)
 				{
 					TemplateRule mvdTemplateRule = ExportMvdItem(docRule, docTemplateUsage.Definition, docProject, version, map);
-					mvdConceptLeaf.TemplateRules.TemplateRule.Add(mvdTemplateRule);
+					mvdConceptLeaf.TemplateRules.Add(mvdTemplateRule);
 
 					// using proposed mvdXML schema
 					if (mvdTemplateRule is TemplateItem)
@@ -2878,7 +2878,7 @@ namespace IfcDoc
 			Dictionary<DocObject, bool> included)
 		{
 			mvd.Uuid = Guid.NewGuid(); // changes every time saved
-			mvd.Name = String.Empty;
+			mvd.Name = "mvd";
 
 			// export all referenced shared templates
 			foreach (DocTemplateDefinition docTemplateDef in docProject.Templates)
@@ -3010,7 +3010,7 @@ namespace IfcDoc
 				foreach (DocTemplateItem docItem in docRoot.ApplicableItems)
 				{
 					TemplateRule rule = ExportMvdItem(docItem, docRoot.ApplicableTemplate, docProject, null, map);
-					mvdConceptRoot.Applicability.TemplateRules.TemplateRule.Add(rule);
+					mvdConceptRoot.Applicability.TemplateRules.Add(rule);
 				}
 
 				if (docProject.GetTemplate(docRoot.ApplicableTemplate.Uuid) == null)

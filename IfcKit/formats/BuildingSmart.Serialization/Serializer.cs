@@ -23,6 +23,7 @@ namespace BuildingSmart.Serialization
 	public abstract class Serializer : Inspector
 	{
 		Dictionary<Type, string> _typeSerializeNames = new Dictionary<Type, string>();
+		private static Dictionary<Type, ConstructorInfo> _ParameterLessConstructors = new Dictionary<Type, ConstructorInfo>();
 		Dictionary<PropertyInfo, DataMemberAttribute> _DataMemberAttribute = new Dictionary<PropertyInfo, DataMemberAttribute>();
 
 		protected static char[] HexChars = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
@@ -99,8 +100,11 @@ namespace BuildingSmart.Serialization
 					if (IsEntityCollection(type))
 					{
 						Type typeCollection = this.GetCollectionInstanceType(type);
-						object collection = Activator.CreateInstance(typeCollection);
-						f.SetValue(o, collection);
+						if (typeCollection != null)
+						{
+							object collection = Activator.CreateInstance(typeCollection);
+							f.SetValue(o, collection);
+						}
 					}
 				}
 			}
@@ -169,6 +173,29 @@ namespace BuildingSmart.Serialization
 			return vector;
 		}
 
+		protected object Construct(Type type)
+		{
+			if (typeof(IEnumerable).IsAssignableFrom(type))
+			{
+				ConstructorInfo parameterlessConstructor = ParameterLessConstructor(type);
+				if (parameterlessConstructor != null)
+				{
+					object result = parameterlessConstructor.Invoke(new object[0]);
+					if (result != null)
+						return result;
+				}
+			}
+			return FormatterServices.GetUninitializedObject(type);
+		}
+		protected ConstructorInfo ParameterLessConstructor(Type type)
+		{
+			ConstructorInfo result = null;
+			if (_ParameterLessConstructors.TryGetValue(type, out result))
+				return result;
+			result = type.GetConstructor(new Type[0]);
+			_ParameterLessConstructors[type] = result;
+			return result;
+		}
 		protected string TypeSerializeName(Type type)
 		{
 			string name = "";
@@ -261,7 +288,7 @@ namespace BuildingSmart.Serialization
 							MethodInfo methodAdd = typeCollection.GetMethod("Add");
 							methodAdd.Invoke(list, new object[] { v }); // perf!!
 						}
-						catch (Exception e)
+						catch (Exception)
 						{
 							// could be type that changed and is no longer compatible with schema -- try to keep going
 						}

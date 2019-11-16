@@ -143,17 +143,24 @@ namespace IfcDoc
 					{
 						schemaNamespace = mvdXML.NamespaceV11;
 					}
-					using (FormatXML format = new FormatXML(filepath, typeof(mvdXML), schemaNamespace))
+					using (FileStream stream = new FileStream(filepath, FileMode.Create))
 					{
 						mvdXML mvd = new mvdXML();
+						Program.ExportMvd(mvd, docProject, schemaNamespace, mapEntity, included);
+						XmlHeader header = new XmlHeader();
+						XmlSerializer format = new XmlSerializer(typeof(mvdXML))
+						{
+							NameSpace = schemaNamespace,
+						};
 						if (schemaNamespace == mvdXML.NamespaceV12)
 						{
-							mvd.schemaLocation = mvdXML.LocationV12;
+							format.SchemaLocation = mvdXML.LocationV12;
 						}
-
-						Program.ExportMvd(mvd, docProject, schemaNamespace, mapEntity, included);
-						format.Instance = mvd;
-						format.Save();
+						else
+						{
+							format.SchemaLocation = mvdXML.LocationV11;
+						}
+						format.WriteObject(stream, mvd);
 					}
 					break;
 

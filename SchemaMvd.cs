@@ -14,6 +14,8 @@ using System.Xml.Serialization;
 using System.Runtime.Serialization;
 
 using IfcDoc.Format.XML;
+using System.Xml;
+using System.Xml.Schema;
 
 namespace IfcDoc.Schema.MVD
 {
@@ -93,7 +95,7 @@ namespace IfcDoc.Schema.MVD
 	public abstract class Identity : SEntity
 	{
 		[DataMember(Order = 0), XmlAttribute("uuid")] public Guid Uuid { get; set; }
-		[DataMember(Order = 1), XmlAttribute("name")] public string Name { get; set; }
+		[DataMember(Order = 1, IsRequired = true), XmlAttribute("name")] public string Name { get; set; }
 		[DataMember(Order = 2), XmlAttribute("code")] public string Code { get; set; } // e.g. 'bsi-100'
 		[DataMember(Order = 3), XmlAttribute("version")] public string Version { get; set; }
 		[DataMember(Order = 4), XmlAttribute("status")] public StatusEnum Status { get; set; } // e.g. 'draft'
@@ -292,7 +294,7 @@ namespace IfcDoc.Schema.MVD
 		{
 			get
 			{
-				return new System.Xml.XmlDocument().CreateCDataSection(Content).ToString();
+				return "<![CDATA[" + Content + "]]>";
 			}
 			set
 			{
@@ -335,7 +337,7 @@ namespace IfcDoc.Schema.MVD
 		[DataMember(Order = 0), XmlAttribute("lang")] public string Lang { get; set; }
 		[DataMember(Order = 1), XmlAttribute("category")] public CategoryEnum Category { get; set; }
 		[DataMember(Order = 2), XmlAttribute("title")] public string Title { get; set; }
-		[DataMember(Order = 3), XmlAttribute("href")] public string Href { get; set; }
+		[DataMember(Order = 3, IsRequired = true), XmlAttribute("href")] public string Href { get; set; }
 		[DataMember(Order = 4), XmlIgnore] public string Content { get; set; }
 	}
 
@@ -367,11 +369,12 @@ namespace IfcDoc.Schema.MVD
 		}
 	}
 
-	[XmlType("ApplicabilityRules")]
-	public class ApplicabilityRules : Element
+	[XmlType("Applicability")]
+	public class ApplicabilityRules// : Element
 	{
-		[DataMember(Order = 0), XmlElement(Order = 0)] public TemplateRef Template { get; set; }
-		[DataMember(Order = 1), XmlElement(Order = 1)] public TemplateRules TemplateRules { get; set; }
+		[DataMember(Order = 0)] [XmlElement(Order = 0)] public Definition Definitions { get; set; }
+		[DataMember(Order = 1), XmlElement(Order = 1)] public TemplateRef Template { get; set; }
+		[DataMember(Order = 2), XmlElement(Order = 2)] public TemplateRules TemplateRules { get; set; }
 	}
 
 	[XmlType("AbstractRule")]
@@ -447,7 +450,7 @@ namespace IfcDoc.Schema.MVD
 	}
 
 	[XmlType("TemplateRule"), XmlInclude(typeof(TemplateItem))]
-	public class TemplateRule : AbstractRule
+	public class TemplateRule : AbstractRule, ITemplateRule
 	{
 		[DataMember(Order = 0), XmlAttribute("Parameters")] public string Parameters { get; set; }
 	}
@@ -476,17 +479,19 @@ namespace IfcDoc.Schema.MVD
 		[XmlEnum("system")] System = 5,           // COBie: purple
 	}
 
+	public interface ITemplateRule
+	{
+
+	}
 	[XmlType("TemplateRules")] // added in mvdXML 1.1d
-	public class TemplateRules
+	public class TemplateRules : List<ITemplateRule>, ITemplateRule
 	{
 		[DataMember(Order = 0), XmlAttribute("operator")] public TemplateOperator Operator { get; set; }
-		[DataMember(Order = 1), XmlElement(typeof(TemplateRule))] public List<TemplateRule> TemplateRule { get; set; }
-		[DataMember(Order = 2), XmlElement(typeof(TemplateRules))] public TemplateRules InnerRules { get; set; }
 
 		public TemplateRules()
 		{
-			TemplateRule = new List<TemplateRule>();
 		}
+
 	}
 
 	public enum TemplateOperator // added in mvdXML 1.1d

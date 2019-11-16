@@ -349,6 +349,41 @@ namespace BuildingSmart.Serialization
 			return null;
 		}
 
+		protected Type GetType(PropertyInfo propertyInfo)
+		{
+			if (propertyInfo == null)
+				return null;
+			Type type = propertyInfo.PropertyType;
+			if (type == typeof(byte[]) || type == typeof(string))
+				return type;
+			if (!propertyInfo.PropertyType.IsValueType && typeof(IEnumerable).IsAssignableFrom(propertyInfo.PropertyType) &&
+				propertyInfo.PropertyType.IsGenericType)
+			{
+				return propertyInfo.PropertyType.GetGenericArguments()[0];
+			}
+			return type;
+		}
+		protected string GetTypeName(PropertyInfo propertyInfo)
+		{
+			Type type = GetType(propertyInfo);
+			if (type == null)
+				return "";
+			return type.Name;
+		}
+		protected bool isListOfType(Type candidateListType, Type type)
+		{
+			if (type == null || !typeof(IList).IsAssignableFrom(candidateListType))
+				return false;
+
+			if(candidateListType.IsGenericType)
+			{
+				Type t = candidateListType.GetGenericArguments()[0];
+				if (t.IsAssignableFrom(type))
+					return true;
+			}
+			return isListOfType(candidateListType.BaseType, type);
+		}
+
 		protected Type[] GetTypes()
 		{
 			return this._typemap.Values.ToArray<Type>();
@@ -611,40 +646,44 @@ namespace BuildingSmart.Serialization
 			// set inverse link for singular references
 			if (value is IEnumerable)
 			{
-				Type typeelem = field.PropertyType.GetGenericArguments()[0];
-				if (typeelem.IsInterface || typeelem.IsClass)
+				Type[] genericArguments = field.PropertyType.GetGenericArguments();
+				if (genericArguments != null && genericArguments.Length > 0)
 				{
-					// set reverse field
-					IEnumerable listSource = (IEnumerable)value;
-					foreach (object listItem in listSource)
+					Type typeelem = field.PropertyType.GetGenericArguments()[0];
+					if (typeelem.IsInterface || typeelem.IsClass)
 					{
-						if (listItem is object)
+						// set reverse field
+						IEnumerable listSource = (IEnumerable)value;
+						foreach (object listItem in listSource)
 						{
-							object itemSource = listItem;
-							PropertyInfo fieldInverse = this.GetFieldInverse(field, itemSource.GetType());
-							if (fieldInverse != null && fieldInverse.PropertyType.IsGenericType)
+							if (listItem is object)
 							{
-								IEnumerable listTarget = (IEnumerable)fieldInverse.GetValue(itemSource);
-								if (listTarget == null)
+								object itemSource = listItem;
+								PropertyInfo fieldInverse = this.GetFieldInverse(field, itemSource.GetType());
+								if (fieldInverse != null && fieldInverse.PropertyType.IsGenericType)
 								{
-									// must allocate list
-									Type typeList = GetCollectionInstanceType(fieldInverse.PropertyType);
-									listTarget = (IEnumerable)Activator.CreateInstance(typeList);
-									fieldInverse.SetValue(itemSource, listTarget);
-								}
+									IEnumerable listTarget = (IEnumerable)fieldInverse.GetValue(itemSource);
+									if (listTarget == null)
+									{
+										// must allocate list
+										Type typeList = GetCollectionInstanceType(fieldInverse.PropertyType);
+										listTarget = (IEnumerable)Activator.CreateInstance(typeList);
+										fieldInverse.SetValue(itemSource, listTarget);
+									}
 
-								// now add to inverse set -- perf: change this to use generated code for much better perfomance
-								MethodInfo methodAdd = listTarget.GetType().GetMethod("Add");
-								if (methodAdd != null)
-								{
-									methodAdd.Invoke(listTarget, new object[] { instance });
+									// now add to inverse set -- perf: change this to use generated code for much better perfomance
+									MethodInfo methodAdd = listTarget.GetType().GetMethod("Add");
+									if (methodAdd != null)
+									{
+										methodAdd.Invoke(listTarget, new object[] { instance });
+									}
+									//listTarget.Add(instance);
 								}
-								//listTarget.Add(instance);
-							}
-							else if (fieldInverse != null)
-							{
-								// scalar inverse
-								fieldInverse.SetValue(listItem, instance);
+								else if (fieldInverse != null)
+								{
+									// scalar inverse
+									fieldInverse.SetValue(listItem, instance);
+								}
 							}
 						}
 					}
