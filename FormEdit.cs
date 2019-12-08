@@ -4696,7 +4696,54 @@ namespace IfcDoc
 
 		private void toolStripMenuItemContextInsertSelectItem_Click(object sender, EventArgs e)
 		{
+			TreeNode tn = this.treeView.SelectedNode;
+			while (!(tn.Tag is DocSchema))
+			{
+				tn = tn.Parent;
+			}
 
+			if (tn.Tag is DocSchema schema)
+			{
+				List<DocDefinition> selectItemReferences = schema.Entities.Cast<DocDefinition>().ToList();
+				foreach(DocDefinition docDef in schema.Types)
+				{
+					if (docDef is DocEnumeration docEnum)
+					{
+						selectItemReferences.Add(docEnum);
+					}
+				}
+
+				using (FormSelectGeneric<DocDefinition> form = new FormSelectGeneric<DocDefinition>(m_project, null, selectItemReferences))
+				{
+					if (form.ShowDialog(this) == DialogResult.OK && form.Selection != null)
+					{
+						DocDefinition docDefinition = form.Selection;
+						DocSelectItem docSelectItem = new DocSelectItem();
+						docSelectItem.Name = docDefinition.Name;
+						if (this.treeView.SelectedNode.Tag is DocSelect docSelect)
+						{
+							docSelect.Selects.Add(docSelectItem);
+						}
+						this.treeView.SelectedNode = this.LoadNode(this.treeView.SelectedNode, docSelectItem, docSelectItem.Name, false);
+					}
+				}
+			}
+
+			/*
+			while (entity.node.)
+			using (FormSelectGeneric<DocSelectItem> form = new FormSelectGeneric<DocSelectItem>(m_project, null, m_project.GetSchema()))
+			{
+				if (form.ShowDialog(this) == DialogResult.OK && form.Selection != null)
+				{
+					DocPropertyConstant docConstant = form.Selection;
+					if (this.treeView.SelectedNode.Tag is DocPropertyEnumeration)
+					{
+						DocPropertyEnumeration docEnumeration = (DocPropertyEnumeration)this.treeView.SelectedNode.Tag;
+						docEnumeration.Constants.Add(docConstant);
+					}
+					this.treeView.SelectedNode = this.LoadNode(this.treeView.SelectedNode, docConstant, docConstant.Name, false);
+				}
+			}*/
 		}
 
 		private void toolStripMenuItemContextIncludeQuantity_Click(object sender, EventArgs e)
