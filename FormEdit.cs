@@ -2608,6 +2608,7 @@ namespace IfcDoc
 			this.toolStripMenuItemContextInsertSchema.Visible = false;
 			this.toolStripMenuItemContextInsertDefined.Visible = false;
 			this.toolStripMenuItemContextInsertSelect.Visible = false;
+			this.toolStripMenuItemContextInsertSelectItem.Visible = false;
 			this.toolStripMenuItemContextInsertEnumeration.Visible = false;
 			this.toolStripMenuItemContextInsertConstant.Visible = false;
 			this.toolStripMenuItemContextInsertEntity.Visible = false;
@@ -3039,6 +3040,8 @@ namespace IfcDoc
 					else if (obj is DocSelect)
 					{
 						DocSelect docSel = (DocSelect)obj;
+						this.toolStripMenuItemContextInsert.Visible = true;
+						this.toolStripMenuItemContextInsertSelectItem.Visible = true;
 					}
 					else if (obj is DocDefined)
 					{
@@ -4691,6 +4694,58 @@ namespace IfcDoc
 			}
 		}
 
+		private void toolStripMenuItemContextInsertSelectItem_Click(object sender, EventArgs e)
+		{
+			TreeNode tn = this.treeView.SelectedNode;
+			while (!(tn.Tag is DocSchema))
+			{
+				tn = tn.Parent;
+			}
+
+			if (tn.Tag is DocSchema schema)
+			{
+				List<DocDefinition> selectItemReferences = schema.Entities.Cast<DocDefinition>().ToList();
+				foreach(DocDefinition docDef in schema.Types)
+				{
+					if (docDef is DocEnumeration docEnum)
+					{
+						selectItemReferences.Add(docEnum);
+					}
+				}
+
+				using (FormSelectGeneric<DocDefinition> form = new FormSelectGeneric<DocDefinition>(m_project, null, selectItemReferences))
+				{
+					if (form.ShowDialog(this) == DialogResult.OK && form.Selection != null)
+					{
+						DocDefinition docDefinition = form.Selection;
+						DocSelectItem docSelectItem = new DocSelectItem();
+						docSelectItem.Name = docDefinition.Name;
+						if (this.treeView.SelectedNode.Tag is DocSelect docSelect)
+						{
+							docSelect.Selects.Add(docSelectItem);
+						}
+						this.treeView.SelectedNode = this.LoadNode(this.treeView.SelectedNode, docSelectItem, docSelectItem.Name, false);
+					}
+				}
+			}
+
+			/*
+			while (entity.node.)
+			using (FormSelectGeneric<DocSelectItem> form = new FormSelectGeneric<DocSelectItem>(m_project, null, m_project.GetSchema()))
+			{
+				if (form.ShowDialog(this) == DialogResult.OK && form.Selection != null)
+				{
+					DocPropertyConstant docConstant = form.Selection;
+					if (this.treeView.SelectedNode.Tag is DocPropertyEnumeration)
+					{
+						DocPropertyEnumeration docEnumeration = (DocPropertyEnumeration)this.treeView.SelectedNode.Tag;
+						docEnumeration.Constants.Add(docConstant);
+					}
+					this.treeView.SelectedNode = this.LoadNode(this.treeView.SelectedNode, docConstant, docConstant.Name, false);
+				}
+			}*/
+		}
+
 		private void toolStripMenuItemContextIncludeQuantity_Click(object sender, EventArgs e)
 		{
 			using (FormSelectQuantity form = new FormSelectQuantity(null, this.m_project, false))
@@ -4840,8 +4895,8 @@ namespace IfcDoc
 
 		private void backgroundWorker_DoWork(object sender, DoWorkEventArgs e)
 		{
-			try
-			{
+			//try
+			//{
 				// build dictionary to map IFC type name to entity and schema                
 				Dictionary<string, DocObject> mapEntity = new Dictionary<string, DocObject>();
 
@@ -4861,11 +4916,11 @@ namespace IfcDoc
 					if(!string.IsNullOrEmpty(indexPath))
 						System.Diagnostics.Process.Start(indexPath);
 				}
-			}
-			catch (Exception ex)
-			{
-				this.m_exception = ex;
-			}
+			//}
+			//catch (Exception ex)
+			//{
+			//	this.m_exception = ex;
+			//}
 		}
 
 		private void backgroundWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
@@ -6862,7 +6917,7 @@ namespace IfcDoc
 						}
 					}
 
-					if (docAttr.DiagramLine.Count == 0 && docAttr.Definition.DiagramRectangle != null)
+					if (docAttr.DiagramLine.Count == 0 && docAttr.Definition.DiagramRectangle != null && docEntity.DiagramRectangle != null)
 					{
 						docAttr.DiagramLine.Add(new DocPoint(docEntity.DiagramRectangle.X + docEntity.DiagramRectangle.Width, docAttr.Definition.DiagramRectangle.Y + docAttr.Definition.DiagramRectangle.Height / 2));
 						docAttr.DiagramLine.Add(new DocPoint(docAttr.Definition.DiagramRectangle.X, docAttr.Definition.DiagramRectangle.Y + docAttr.Definition.DiagramRectangle.Height / 2));
@@ -10295,7 +10350,5 @@ namespace IfcDoc
 
 			this.LoadTree();
 		}
-		
 	}
-
 }
