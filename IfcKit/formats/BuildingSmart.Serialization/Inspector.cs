@@ -123,9 +123,14 @@ namespace BuildingSmart.Serialization
 
 			// determine the root class (IfcRoot) according to the root class of the passed in object (IfcProject)
 			Type typeRoot = typeProject.BaseType;
-			while (typeRoot.BaseType != typeof(object))
+			if (typeRoot == null || typeRoot == typeof(object))
+				typeRoot = typeProject;
+			else
 			{
-				typeRoot = typeRoot.BaseType;
+				while (typeRoot.BaseType != typeof(object))
+				{
+					typeRoot = typeRoot.BaseType;
+				}
 			}
 
 			this._roottype = typeRoot;
@@ -369,6 +374,17 @@ namespace BuildingSmart.Serialization
 			if (type == null)
 				return "";
 			return type.Name;
+		}
+		protected MethodInfo getMethod(Type type, string methodName)
+		{
+			if (type == null)
+				return null;
+			MethodInfo methodInfo = type.GetMethod(methodName);
+			if (methodInfo == null)
+			{
+				return getMethod(type.BaseType, methodName);
+			}
+			return methodInfo;
 		}
 		protected bool isListOfType(Type candidateListType, Type type)
 		{

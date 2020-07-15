@@ -232,7 +232,7 @@ namespace IfcDoc.Schema.MVD
 	public class ConceptRequirement : SEntity
 	{
 		[DataMember(Order = 0), XmlAttribute("applicability")] public ApplicabilityEnum Applicability { get; set; }
-		[DataMember(Order = 1), XmlAttribute("requirement")] public RequirementEnum Requirement { get; set; }
+		[DataMember(Order = 1, IsRequired = true), XmlAttribute("requirement")] public RequirementEnum Requirement { get; set; }
 		[DataMember(Order = 2), XmlAttribute("exchangeRequirement")] public Guid ExchangeRequirement { get; set; }// Uuid
 	}
 
@@ -486,7 +486,7 @@ namespace IfcDoc.Schema.MVD
 	[XmlType("TemplateRules")] // added in mvdXML 1.1d
 	public class TemplateRules : List<ITemplateRule>, ITemplateRule
 	{
-		[DataMember(Order = 0), XmlAttribute("operator")] public TemplateOperator Operator { get; set; }
+		[DataMember(Order = 0, IsRequired = true), XmlAttribute("operator")] public TemplateOperator Operator { get; set; }
 
 		public TemplateRules()
 		{

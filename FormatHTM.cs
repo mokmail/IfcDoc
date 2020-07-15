@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -1619,14 +1620,36 @@ namespace IfcDoc.Format.HTM
 						{
 							if (attr.Name == "PredefinedType")
 							{
-								DocEnumeration docEnum = (DocEnumeration)this.m_mapEntity[attr.DefinedType];
-								this.WriteLine("<table class=\"inheritanceenum\">");
-								foreach (DocConstant docConst in docEnum.Constants)
+								DocObject docObject = null;
+								if (this.m_mapEntity.TryGetValue(attr.DefinedType, out docObject))
 								{
-									this.WriteLine("<tr><td>" + docConst.Name + "</td></tr>");
+									List<DocConstant> constants = new List<DocConstant>();
+									DocEnumeration docEnum = docObject as DocEnumeration;
+									if (docEnum != null)
+										constants.AddRange(docEnum.Constants);
+									else
+									{
+										DocSelect docSelect = docObject as DocSelect;
+										if (docSelect != null)
+										{
+											constants.AddRange(docSelect.NestedObjects(m_mapEntity).OfType<DocConstant>());
+										}
+									}
+									if (constants.Count > 0)
+									{
+										this.WriteLine("<table class=\"inheritanceenum\">");
+										foreach (DocConstant docConst in constants)
+										{
+											this.WriteLine("<tr><td>" + docConst.Name + "</td></tr>");
+										}
+										this.WriteLine("</table>");
+										break;
+									}
+									else
+									{
+										System.Diagnostics.Debug.WriteLine("XXX No Predefined Constants found for " + entity.Name);
+									}
 								}
-								this.WriteLine("</table>");
-								break;
 							}
 						}
 					}
@@ -1862,6 +1885,8 @@ namespace IfcDoc.Format.HTM
 				string relativePath = "../../../";
 				if (current is DocPropertyEnumeration)
 					relativePath = "../";
+				else if (current is DocSchema)
+					relativePath = "../../";
 				content = Regex.Replace(content, "../(../)+figures", relativePath + "figures");
 				int i = content.Length - 1;
 				while (i > 0)
@@ -2870,13 +2895,13 @@ namespace IfcDoc.Format.HTM
 				{
 					this.Write("<tr>" +
 						"<td>PSD-XML property templates in ZIP file</td>" +
-						"<td><a href=\"" + linkprefix + "-psd.zip_\">" + code + "-psd.zip</a></td>" +
+						"<td><a href=\"" + linkprefix + "-psd.zip\">" + code + "-psd.zip</a></td>" +
 						"<td>&nbsp;</td>" +
 						"</tr>" +
 
 						"<tr>" +
 						"<td>QTO-XML quantity templates in ZIP file</td>" +
-						"<td><a href=\"" + linkprefix + "-qto.zip_\">" + code + "-qto.zip</a></td>" +
+						"<td><a href=\"" + linkprefix + "-qto.zip\">" + code + "-qto.zip</a></td>" +
 						"<td>&nbsp;</td>" +
 						"</tr>");
 				}

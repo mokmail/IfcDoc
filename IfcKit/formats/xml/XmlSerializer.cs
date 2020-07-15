@@ -355,7 +355,7 @@ namespace BuildingSmart.Serialization.Xml
 				object localEntity = entity;
 				bool nested = useParent;
 				string nestedTypeName = "";
-				MethodInfo listAdd = null; ;
+				MethodInfo listAdd = null;
 				
 				PropertyInfo nestedPropInfo = null;
 				if (useParent)
@@ -368,7 +368,7 @@ namespace BuildingSmart.Serialization.Xml
 						Type nestedType = GetTypeByName(nestedReaderLocalName);
 						if(isListOfType(t, nestedType))
 						{
-							listAdd = nestedType.GetMethod("Add");
+							listAdd = getMethod(t, "Add");
 							if(listAdd != null)
 								nestedTypeName = nestedType.Name;
 						}
@@ -543,6 +543,19 @@ namespace BuildingSmart.Serialization.Xml
 			if (ft.IsEnum)
 			{
 				FieldInfo enumfield = ft.GetField(reader.Value, BindingFlags.IgnoreCase | BindingFlags.Public | System.Reflection.BindingFlags.Static);
+				if(enumfield == null)
+                {
+					FieldInfo[] fields = ft.GetFields(BindingFlags.Public | BindingFlags.Static);
+					foreach(FieldInfo fieldInfo in fields)
+					{
+						XmlEnumAttribute xmlEnumAttribute = fieldInfo.GetCustomAttribute<XmlEnumAttribute>();
+						if (xmlEnumAttribute != null && string.Compare(reader.Value, xmlEnumAttribute.Name) == 0)
+						{
+							enumfield = fieldInfo;
+							break;
+						}
+					}
+                }
 				if (enumfield != null)
 				{
 					v = enumfield.GetValue(null);
@@ -761,7 +774,7 @@ namespace BuildingSmart.Serialization.Xml
 		private void writeRootObject(Stream stream, object root, HashSet<string> propertiesToIgnore, bool isIdPass)
 		{
 			int indent = 0;
-			StreamWriter writer = new StreamWriter(stream, Encoding.UTF8);
+			StreamWriter writer = new StreamWriter(stream, new UTF8Encoding(false));
 
 			this.WriteHeader(writer);
 
@@ -905,6 +918,10 @@ namespace BuildingSmart.Serialization.Xml
 			indent--;
 
 			this.WriteIndent(writer, indent);
+			this.WriteEndElementEntity(writer, name);
+		}
+		protected void WriteEndElementEntity(StreamWriter writer, string name)
+		{
 			writer.Write("</");
 			writer.Write(name);
 			writer.WriteLine(">");
@@ -1161,7 +1178,21 @@ namespace BuildingSmart.Serialization.Xml
 									}
 								}
 
-								if (ft.IsEnum || ft == typeof(bool))
+								if (ft.IsEnum)
+								{
+									FieldInfo fieldInfo = ft.GetField(value.ToString());
+									if (fieldInfo != null)
+									{
+										XmlEnumAttribute xmlEnumAttribute = fieldInfo.GetCustomAttribute<XmlEnumAttribute>();
+										if (xmlEnumAttribute != null)
+											value = xmlEnumAttribute.Name;
+										else
+											value = value.ToString().ToLowerInvariant();
+									}
+									else
+										value = value.ToString().ToLowerInvariant();
+								}
+								else if(ft == typeof(bool))
 								{
 									value = value.ToString().ToLowerInvariant();
 								}
@@ -1224,6 +1255,37 @@ namespace BuildingSmart.Serialization.Xml
 					DocXsdFormatEnum? format = GetXsdFormat(f, ref elementName);
 					if (format == DocXsdFormatEnum.Element)
 					{
+						if(ft == typeof(string))
+						{
+							if (!open)
+							{
+								WriteOpenElement(writer);
+								open = true;
+							}
+							string str = System.Security.SecurityElement.Escape((string)value);
+							WriteStartElementEntity(writer, ref indent, elementName);
+							WriteOpenElement(writer, false);
+							writer.Write(str);
+							indent--;
+							WriteEndElementEntity(writer, elementName);
+
+							continue;
+						}
+						if (ft == typeof(byte[]))
+						{
+							if (!open)
+							{
+								WriteOpenElement(writer);
+								open = true;
+							}
+							WriteStartElementEntity(writer, ref indent, elementName);
+							WriteOpenElement(writer, false);
+							string strval = SerializeBytes((byte[])value);
+							writer.Write(strval);
+							indent--;
+							WriteEndElementEntity(writer, elementName);
+							continue;
+						}
 						bool showit = true; //...check: always include tag if Attribute (even if zero); hide if Element 
 						IEnumerable ienumerable = value as IEnumerable;
 						string fieldName = tuple.Item1.Key, fieldTypeName = TypeSerializeName(ft);
@@ -1231,7 +1293,7 @@ namespace BuildingSmart.Serialization.Xml
 						{
 							if (!ft.IsValueType && !isvaluelist && !isvaluelistlist)
 							{
-								
+
 								if (!open)
 								{
 									WriteOpenElement(writer);
@@ -1256,29 +1318,29 @@ namespace BuildingSmart.Serialization.Xml
 								}
 							}
 							else
-                            {
-                                if (!open)
-                                {
-                                    WriteOpenElement(writer);
-                                    open = true;
-                                }
+							{
+								if (!open)
+								{
+									WriteOpenElement(writer);
+									open = true;
+								}
 								WriteEntity(writer, ref indent, value, propertiesToIgnore, queue, isIdPass, fieldName, fieldTypeName);
 								continue;
-                            }
-						}
-						if (showit)
-						{
-							if (!open)
-							{
-								WriteOpenElement(writer);
-								open = true;
 							}
+							if (showit)
+							{
+								if (!open)
+								{
+									WriteOpenElement(writer);
+									open = true;
+								}
 
-                            foreach (object subObj in ienumerable)
-                            {
-								WriteEntity(writer, ref indent, subObj, propertiesToIgnore, queue, isIdPass, elementName, "");
-                            }
-                        }
+								foreach (object subObj in ienumerable)
+								{
+									WriteEntity(writer, ref indent, subObj, propertiesToIgnore, queue, isIdPass, elementName, "");
+								}
+							}
+						}
 					}
 					else if (dataMemberAttribute != null)
 					{

@@ -324,7 +324,7 @@ namespace IfcDoc
 				{
 					foreach (IDocumentation obj in instances.OfType<IDocumentation>().Where(x=> !string.IsNullOrEmpty(x.Documentation)))
 					{
-						obj.Documentation = convertToMarkdown(obj, obj.Documentation);
+						obj.Documentation = convertToMarkdown(obj.Documentation);
 						DocObject docObject = obj as DocObject;
 						if (docObject != null && docObject.Localization.Count > 0)
 						{	
@@ -521,7 +521,7 @@ namespace IfcDoc
 				result += " " + attribute.Name + "=\"" + attribute.Value;
 			return result + ">";
 		}
-		private static string convertToMarkdown(IDocumentation obj, string html)
+		public static string convertToMarkdown(string html)
 		{
 			string documentation = Regex.Replace(html, @"<li>&quot;\s+", "<li>&quot;").Replace("<br/>\r\n", "<br/>").Replace("blackquote", "blockquote");
 			documentation = documentation.Replace("<u>Definition from IAI</u>:", "");
@@ -540,13 +540,13 @@ namespace IfcDoc
 			HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
 			doc.LoadHtml(documentation);
 			HtmlNode node = doc.DocumentNode;
-			string result = convertToMarkdown(obj, node, new ConvertMarkdownOptions()).Trim();
+			string result = convertToMarkdown(node, new ConvertMarkdownOptions()).Trim();
 
 			if(result.EndsWith("___"))
 				result = result.Substring(0, result.Length - 3).TrimEnd();
 			return result;
 		}
-		private static string convertToMarkdown(IDocumentation obj, HtmlNode node, ConvertMarkdownOptions options)
+		private static string convertToMarkdown(HtmlNode node, ConvertMarkdownOptions options)
 		{
 			ConvertMarkdownOptions childOptions = new ConvertMarkdownOptions(options);
 			if (node.NodeType == HtmlNodeType.Text)
@@ -664,7 +664,7 @@ namespace IfcDoc
 				else if (string.Compare(name, "em", true) == 0 || string.Compare(name, "i", true) == 0)
 				{
 					if(node.ChildNodes.Count == 1 && node.FirstChild.NodeType == HtmlNodeType.Text && node.FirstChild.InnerText[0] == '.')
-						return result  + "._" + convertToMarkdown(obj, node.FirstChild,childOptions).Substring(1) + "_";
+						return result  + "._" + convertToMarkdown(node.FirstChild,childOptions).Substring(1) + "_";
 					prefix += "_";
 					suffix = "_";
 				}
@@ -674,7 +674,7 @@ namespace IfcDoc
 				}
 				else if (string.Compare(name, "font", true) == 0)
 				{
-					System.Diagnostics.Debug.WriteLine("Font :" + node.OuterHtml);
+				//	System.Diagnostics.Debug.WriteLine("Font :" + node.OuterHtml);
 					return node.OuterHtml;
 				}
 				else if (name.Length == 2 && name[0] == 'h' && char.IsDigit(name[1]))
@@ -710,7 +710,7 @@ namespace IfcDoc
 					//handled in parent
 				}
 				else if (string.Compare(name, "ol", true) == 0)
-					return result + prefix + convertListToMarkdown(obj, node, new ConvertMarkdownOptions(childOptions) { m_CollapseLines = true }, true, 0) + suffix;
+					return result + prefix + convertListToMarkdown(node, new ConvertMarkdownOptions(childOptions) { m_CollapseLines = true }, true, 0) + suffix;
 				else if (string.Compare(name, "noscript", true) == 0)	
 					return node.OuterHtml;
 				else if (string.Compare(name, "p", true) == 0)
@@ -750,9 +750,9 @@ namespace IfcDoc
 					suffix += "^";
 				}
 				else if (string.Compare(name, "table", true) == 0)
-					return result + prefix + convertTable(obj, node, options) + suffix;
+					return result + prefix + convertTable(node, options) + suffix;
 				else if (string.Compare(name, "ul", true) == 0)
-					return result + prefix + convertListToMarkdown(obj, node, new ConvertMarkdownOptions(childOptions) { m_CollapseLines = true }, false, 0) + suffix;
+					return result + prefix + convertListToMarkdown(node, new ConvertMarkdownOptions(childOptions) { m_CollapseLines = true }, false, 0) + suffix;
 				else
 					return node.OuterHtml;
 			}
@@ -786,7 +786,7 @@ namespace IfcDoc
 					ConvertMarkdownOptions nestedOptions = childOptions;
 					if ((isParagraph || isBlockQuote) && n.NodeType == HtmlNodeType.Text)
 						nestedOptions = new ConvertMarkdownOptions(childOptions) { m_CollapseLines = true };
-					string str = convertToMarkdown(obj, n, nestedOptions);
+					string str = convertToMarkdown(n, nestedOptions);
 					if (!string.IsNullOrWhiteSpace(str))
 					{
 						bool childBlockQuote = string.Compare(n.Name, "blockquote",true) == 0;
@@ -845,7 +845,7 @@ namespace IfcDoc
 			}
 			return result + prefix + inner + suffix;
 		}
-		private static string convertTable(IDocumentation obj, HtmlNode node, ConvertMarkdownOptions options)
+		private static string convertTable(HtmlNode node, ConvertMarkdownOptions options)
 		{
 			List<HtmlNode> rows = new List<HtmlNode>();
 			foreach (HtmlNode htmlNode in childNodes(node))
@@ -911,7 +911,7 @@ namespace IfcDoc
 
 						string titleString = "";
 						foreach (HtmlNode htmlNode in removed)
-							titleString += convertToMarkdown(obj, htmlNode, new ConvertMarkdownOptions(options) { m_BlockQuoteLevel = 0, m_CollapseLines = true });
+							titleString += convertToMarkdown(htmlNode, new ConvertMarkdownOptions(options) { m_BlockQuoteLevel = 0, m_CollapseLines = true });
 						if (image != null)
 						{
 							string alt = "", src = "";
@@ -941,7 +941,7 @@ namespace IfcDoc
 						headers.Clear();
 						break;
 					}
-					string str = convertToMarkdown(obj, child, new ConvertMarkdownOptions(options) { m_BlockQuoteLevel = 0, m_CollapseLines = true, m_RetainBreakReturns = true });
+					string str = convertToMarkdown(child, new ConvertMarkdownOptions(options) { m_BlockQuoteLevel = 0, m_CollapseLines = true, m_RetainBreakReturns = true });
 					if(str.Contains("\r\n"))
 					{
 						headers.Clear();
@@ -966,7 +966,7 @@ namespace IfcDoc
 								result = null;
 								break;
 							}
-							string str = convertToMarkdown(obj, data, new ConvertMarkdownOptions(options) { m_BlockQuoteLevel = 0, m_CollapseLines = true, m_RetainBreakReturns = true });
+							string str = convertToMarkdown(data, new ConvertMarkdownOptions(options) { m_BlockQuoteLevel = 0, m_CollapseLines = true, m_RetainBreakReturns = true });
 							if (str.Contains("\r\n"))
 							{
 								result = null;
@@ -987,7 +987,7 @@ namespace IfcDoc
 			return blockQuote(options.m_BlockQuoteLevel) + node.OuterHtml + "\r\n\r\n";
 		}
 	
-		private static string convertListToMarkdown(IDocumentation obj, HtmlNode node, ConvertMarkdownOptions options, bool isOrdered, int indentLevel)
+		private static string convertListToMarkdown(HtmlNode node, ConvertMarkdownOptions options, bool isOrdered, int indentLevel)
 		{
 			string result = "";
 			int count = 1;
@@ -995,14 +995,14 @@ namespace IfcDoc
 			{
 				if (string.Compare(hn.Name, "ol", true) == 0)
 				{
-					string nestedList = convertListToMarkdown(obj, hn, options, true, indentLevel + 1);
+					string nestedList = convertListToMarkdown(hn, options, true, indentLevel + 1);
 					if (nestedList.StartsWith("<"))
 						return node.OuterHtml + "\r\n";
 					result += nestedList;
 				}
 				else if (string.Compare(hn.Name, "ul", true) == 0)
 				{
-					string nestedList = convertListToMarkdown(obj, hn, options, false, indentLevel + 1);
+					string nestedList = convertListToMarkdown(hn, options, false, indentLevel + 1);
 					if (nestedList.StartsWith("<"))
 						return node.OuterHtml + "\r\n";
 					result += nestedList;
@@ -1016,7 +1016,7 @@ namespace IfcDoc
 						{
 							if (string.Compare(htmlNode.Name, "ol", true) == 0)
 							{
-								string nestedList = convertListToMarkdown(obj, htmlNode, options, true, indentLevel + 1);
+								string nestedList = convertListToMarkdown(htmlNode, options, true, indentLevel + 1);
 								if (nestedList.StartsWith("<"))
 									return node.OuterHtml + "\r\n";
 								setItem = false;
@@ -1024,7 +1024,7 @@ namespace IfcDoc
 							}
 							else if (string.Compare(htmlNode.Name, "ul", true) == 0)
 							{
-								string nestedList = convertListToMarkdown(obj, htmlNode, options, false, indentLevel + 1);
+								string nestedList = convertListToMarkdown(htmlNode, options, false, indentLevel + 1);
 								if (nestedList.StartsWith("<"))
 									return node.OuterHtml + "\r\n";
 								setItem = false;
@@ -1034,7 +1034,7 @@ namespace IfcDoc
 							{
 								if (isOrdered)
 									return node.OuterHtml + "\r\n";
-								string str = convertToMarkdown(obj, htmlNode, new ConvertMarkdownOptions(options) { m_BlockQuoteLevel = indentLevel + 1 }).TrimEnd('\r','\n');
+								string str = convertToMarkdown(htmlNode, new ConvertMarkdownOptions(options) { m_BlockQuoteLevel = indentLevel + 1 }).TrimEnd('\r','\n');
 								if (str.Contains("\r\n"))
 									return node.OuterHtml + "\r\n";
 								result += "\r\n" + str.TrimEnd('\r','\n');
@@ -1042,7 +1042,7 @@ namespace IfcDoc
 							}
 							else
 							{
-								string str = convertToMarkdown(obj, htmlNode, new ConvertMarkdownOptions(options) { m_BlockQuoteLevel = 0 }).Trim('\r','\n');
+								string str = convertToMarkdown(htmlNode, new ConvertMarkdownOptions(options) { m_BlockQuoteLevel = 0 }).Trim('\r','\n');
 								if (str.Contains("\r\n"))
 									return node.OuterHtml + "\r\n";
 								if(newItem)
@@ -1060,7 +1060,7 @@ namespace IfcDoc
 					}
 					else
 					{
-						string str = convertToMarkdown(obj, hn, new ConvertMarkdownOptions(options) { m_BlockQuoteLevel = 0 }).Trim();
+						string str = convertToMarkdown(hn, new ConvertMarkdownOptions(options) { m_BlockQuoteLevel = 0 }).Trim();
 						if (!string.IsNullOrEmpty(str))
 						{
 							if (str.Contains("\r\n"))

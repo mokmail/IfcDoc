@@ -1662,11 +1662,6 @@ namespace IfcDoc
 							docEntity.BaseDefinition = null;
 						}
 
-						if (docEntity.Name.Equals("IfcCurve"))
-						{
-							this.ToString();
-						}
-
 						foreach (DocSubtype docSub in docEntity.Subtypes)
 						{
 							if (docSub.DefinedType == definition)

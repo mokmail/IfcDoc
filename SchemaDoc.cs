@@ -759,23 +759,23 @@ namespace IfcDoc.Schema.DOC
 		/// <returns></returns>
 		public string GetSchemaURI(DocPublication docPub)
 		{
-			string release = "FINAL";
-			if (docPub != null)
+			string draft = "RELEASE";
+			if (docPub == null || string.Compare(docPub.Status, "Official",true) != 0)
 			{
-				release = docPub.GetReleaseIdentifier();
-			}
-			else if (this.Publications.Count > 0)
-			{
-				release = this.Publications[0].GetReleaseIdentifier();
+				draft = "DEV";
 			}
 
-			string draft = "";
-			if (docPub != null && string.Compare(docPub.Status, "Official",true) != 0)
+			string schemaIdentifier = this.GetSchemaIdentifier(), developmentRelease = "FINAL";
+			int index = schemaIdentifier.IndexOf("_");
+			if(index > 0)
 			{
-				draft = "review/";
+				developmentRelease = schemaIdentifier.Substring(index + 1);
+				schemaIdentifier = schemaIdentifier.Substring(0, index);
 			}
+			schemaIdentifier = schemaIdentifier.Replace("X", "_").Replace("x","_");
 
-			return "http://www.buildingsmart-tech.org/ifc/" + draft + this.GetSchemaIdentifier() + "/" + release.ToLower();
+
+			return "https://standards.buildingsmart.org/IFC/" + draft + "/" + schemaIdentifier + "/" + developmentRelease;
 
 			// for now...temp hack...
 			//return "http://www.buildingsmart-tech.org/ifc/IFC4/Add2TC1";
@@ -895,6 +895,25 @@ namespace IfcDoc.Schema.DOC
 			return null;
 		}
 
+		public DocEntity FindEntityByName(string name)
+		{
+			DocSchema schema = null;
+			return FindEntityByName(name, out schema);
+		}
+		public DocEntity FindEntityByName(string name, out DocSchema schema)
+		{
+			foreach(DocSchema docSchema in Sections.SelectMany(x=>x.Schemas))
+			{
+				DocEntity entity = docSchema.Entities.Where(x => x.Name.Equals(name)).FirstOrDefault();
+				if(entity != null)
+				{
+					schema = docSchema;
+					return entity;
+				}
+			}
+			schema = null;
+			return null;
+		}
 		public DocPropertySet FindPropertySet(string def, out DocSchema schema)
 		{
 			foreach (DocSection docSection in this.Sections)
@@ -2997,6 +3016,7 @@ namespace IfcDoc.Schema.DOC
 		[DataMember(Order = 7)] [XmlAttribute] public byte[] Icon { get; set; } // embedded PNG file of 16x16 icon // added in IfcDoc 9.6
 		[DataMember(Order = 8)] [XmlArray] public List<DocProcess> Processes { get; protected set; } // new in V11.5
 		[DataMember(Order = 9)] [XmlArray] [XmlArrayItem(NestingLevel = 1)] public List<DocModelView> ModelViews { get; protected set; } // new in V11.6 -- organize sub-views
+		[DataMember(Order = 10)] [XmlAttribute] public string XsdNameSpace { get; set; } // new in 5.4
 
 		private Dictionary<DocObject, bool> m_filtercache; // for performance, remember items within scope of model view; built on demand, cleared whenever there's a change that could impact
 
@@ -3140,7 +3160,7 @@ namespace IfcDoc.Schema.DOC
 		[DataMember(Order = 0)] [XmlAttribute] public string Name { get; set; } // the attribute or entity name, case-sensitive
 		[DataMember(Order = 1)] [XmlAttribute] public string Description { get; set; } // used as human description on template rules; otherwise holds special encodings
 		[DataMember(Order = 2)] [XmlAttribute] public string Identification { get; set; } // the template parameter ID
-		[DataMember(Order = 3)] [XmlElement] public List<DocModelRule> Rules { get; protected set; } // subrules
+		[DataMember(Order = 3)] [XmlArray] public List<DocModelRule> Rules { get; protected set; } // subrules
 		//[DataMember(Order = 4)] public DocModelRuleTypeEnum Type; // deleted in IfcDoc 2.7        
 		[DataMember(Order = 4), Obsolete] public int CardinalityMin { get; set; } // -1 means undefined // added in IfcDoc 3.3 ; DEPRECATED
 		[DataMember(Order = 5), Obsolete] public int CardinalityMax { get; set; } // -1 means unbounded // added in IfcDoc 3.3 ; DEPRECATED
@@ -7263,6 +7283,21 @@ namespace IfcDoc.Schema.DOC
 			this.Tree = new List<DocLine>();
 		}
 		public void InitializeTree() { Tree = new List<DocLine>(); }
+
+		public List<DocObject> NestedObjects(Dictionary<string, DocObject> dictionary)
+		{
+			List<DocObject> result = new List<DocObject>();
+			foreach(DocSelectItem item in Selects)
+			{
+				DocObject obj = dictionary[item.Name];
+				DocSelect select = obj as DocSelect;
+				if (select != null)
+					result.AddRange(select.NestedObjects(dictionary));
+				else
+					result.Add(obj);
+			}
+			return result;
+		}
 	}
 
 	public class DocSelectItem : DocObject

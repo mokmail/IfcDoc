@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 //using System.Xml.Serialization;
 
 using BuildingSmart.IFC;
@@ -101,11 +102,11 @@ namespace IfcDoc
 
 			// special case for zip files -- determine based on special naming; make configurable in future
 			Type typeExport = null;
-			if (filepath.EndsWith("-psd.zip_"))
+			if (filepath.EndsWith("-psd.zip"))
 			{
 				typeExport = typeof(DocPropertySet);
 			}
-			else if (filepath.EndsWith("-qto.zip_"))
+			else if (filepath.EndsWith("-qto.zip"))
 			{
 				typeExport = typeof(DocQuantitySet);
 			}
@@ -4124,11 +4125,11 @@ namespace IfcDoc
 										ConceptRoot mvdConceptRoot = new ConceptRoot();
 										List<DocTemplateDefinition> listPrivateTemplates = new List<DocTemplateDefinition>();
 										Program.ExportMvdConceptRoot(mvdConceptRoot, docRoot, docProject, null, mapEntity, false, listPrivateTemplates);
-										System.Xml.Serialization.XmlSerializer ser = new System.Xml.Serialization.XmlSerializer(typeof(ConceptRoot));
+										XmlSerializer ser = new XmlSerializer(typeof(ConceptRoot));
 										StringBuilder mvdOutput = new StringBuilder();
 										using (System.IO.Stream streamMVD = new System.IO.MemoryStream())
 										{
-											ser.Serialize(streamMVD, mvdConceptRoot, null);
+											ser.WriteObject(streamMVD, mvdConceptRoot);
 											streamMVD.Position = 0;
 											using (System.IO.StreamReader reader = new System.IO.StreamReader(streamMVD))
 											{
@@ -4362,8 +4363,8 @@ namespace IfcDoc
 				DoExport(docProject, docPublication, path + @"\annex\annex-a\" + MakeLinkName(docModelView) + @"\" + code + ".ifc", modelviews, locales, DocDefinitionScopeEnum.Default, null, mapEntity);
 				DoExport(docProject, docPublication, path + @"\annex\annex-a\" + MakeLinkName(docModelView) + @"\" + code + ".ifcxml", modelviews, locales, DocDefinitionScopeEnum.Default, null, mapEntity);
 				DoExport(docProject, docPublication, path + @"\annex\annex-a\" + MakeLinkName(docModelView) + @"\" + code + ".xml", modelviews, locales, DocDefinitionScopeEnum.Default, null, mapEntity);
-				DoExport(docProject, docPublication, path + @"\annex\annex-a\" + MakeLinkName(docModelView) + @"\" + code + "-psd.zip_", modelviews, locales, DocDefinitionScopeEnum.Default, null, mapEntity);
-				DoExport(docProject, docPublication, path + @"\annex\annex-a\" + MakeLinkName(docModelView) + @"\" + code + "-qto.zip_", modelviews, locales, DocDefinitionScopeEnum.Default, null, mapEntity);
+				DoExport(docProject, docPublication, path + @"\annex\annex-a\" + MakeLinkName(docModelView) + @"\" + code + "-psd.zip", modelviews, locales, DocDefinitionScopeEnum.Default, null, mapEntity);
+				DoExport(docProject, docPublication, path + @"\annex\annex-a\" + MakeLinkName(docModelView) + @"\" + code + "-qto.zip", modelviews, locales, DocDefinitionScopeEnum.Default, null, mapEntity);
 
 				if (docPublication.GetFormatOption(DocFormatSchemaEnum.STEP) != DocFormatOptionEnum.None)
 				{
@@ -4382,7 +4383,8 @@ namespace IfcDoc
 
 					// change: root always has full schema
 					// long-form
-					string pathTarget = pathPublication + @"\" + docProject.GetSchemaIdentifier() + ".exp";
+					string expressPath = Path.Combine(pathPublication, "EXPRESS");
+					string pathTarget = Path.Combine(expressPath, docProject.GetSchemaIdentifier() + ".exp");
 					DoExport(docProject, docPublication, pathTarget, null, null, DocDefinitionScopeEnum.Default, null, mapEntity);
 
 					// short-form
@@ -4390,7 +4392,7 @@ namespace IfcDoc
 					{
 						foreach (DocSchema docSchema in docSection.Schemas)
 						{
-							string pathSchema = pathPublication + @"\" + docSchema.Name + ".exp";
+							string pathSchema = Path.Combine(expressPath, docSchema.Name + ".exp");
 							using (FormatEXP format = new FormatEXP(docProject, docSchema, null, pathSchema))
 							{
 								format.Save();
@@ -4427,7 +4429,13 @@ namespace IfcDoc
 						//    pathPublication + @"\" + docProject.GetSchemaIdentifier() + "_" + docPublication.GetReleaseIdentifier() + "." + docFormat.ExtensionSchema, true);
 
 						// change: root always has full schema
-						string pathTarget = pathPublication + @"\" + docProject.GetSchemaIdentifier() + "." + docFormat.ExtensionSchema;
+						string pathTarget = Path.Combine(pathPublication, docProject.GetSchemaIdentifier() + "." + docFormat.ExtensionSchema);
+						if (string.Compare(docFormat.ExtensionSchema, "XSD", true) == 0)
+						{
+							string xmlDirectory = Path.Combine(pathPublication, "XML");
+							Directory.CreateDirectory(xmlDirectory);
+							pathTarget = Path.Combine(xmlDirectory, docProject.GetSchemaIdentifier() + "." + docFormat.ExtensionSchema);
+						}
 						//DoExport(docProject, docPublication, pathTarget, null, null, DocDefinitionScopeEnum.Default, instances, mapEntity);
 						string fullcontent = formatextension.FormatDefinitions(docProject, docPublication, mapEntity, null);
 						using (System.IO.StreamWriter writer = new System.IO.StreamWriter(pathTarget, false))
@@ -4636,7 +4644,7 @@ namespace IfcDoc
 			List<string> indexPaths = new List<string>();
 			foreach (DocPublication docPub in publications)
 			{
-				string relpath = releasepath + @"\" + MakeLinkName(string.IsNullOrEmpty(docPub.Code) ? docPub.Name : docPub.Code);
+				string relpath = Path.Combine(releasepath, MakeLinkName(string.IsNullOrEmpty(docPub.Code) ? docPub.Name : docPub.Code));
 				indexPaths.Add(GeneratePublication(docProject, relpath, mapEntity, mapSchema, docPub, worker, formProgress));
 			}
 			return indexPaths;
@@ -4666,12 +4674,7 @@ namespace IfcDoc
 			DocModelView[] views = docPublication.Views.ToArray();
 
 			List<DocXsdFormat> xsdFormatBase = docProject.BuildXsdFormatList();
-			string xmlns = "http://www.buildingsmart-tech.org/ifcXML/IFC4/final";
-
-			if (views.Length > 0 && !String.IsNullOrEmpty(views[0].XsdUri))
-			{
-				xmlns = views[0].XsdUri;
-			}
+			
 
 			List<DocChangeSet> listChangeSets = docProject.ChangeSets;
 			if (docPublication.ChangeSets.Count > 0)
@@ -4716,34 +4719,39 @@ namespace IfcDoc
 						mapFormatSchema.Add(docFormat.FormatType, new FormatXSD(null));
 						string version = docProject.GetSchemaVersion();
 						XmlSerializer serializer = new XmlSerializer(typeProject);
-						if(string.IsNullOrEmpty(version))
-						{
-							
+						serializer.NameSpace = @"https://standards.buildingsmart.org/ifc/IFC4x3/final";
+						serializer.SchemaLocation = @"https://standards.buildingsmart.org/IFC/DEV/IFC4_3/FINAL/XML/IFC4X3.xsd";
 
-						}
-						else if(version.StartsWith("2.3.0"))
+						if (views.Length > 0 && !String.IsNullOrEmpty(views[0].XsdUri))
 						{
-							serializer.NameSpace = @"http://www.iai-tech.org/ifcXML/IFC2x3/FINAL";
-							serializer.SchemaLocation = @"http://standards.buildingsmart.org/IFC/RELEASE/IFC2x3/TC1/XML/IFC2X3.xsd";
+							serializer.NameSpace = views[0].XsdNameSpace;
+							serializer.SchemaLocation = views[0].XsdUri;
 						}
-						else if(version.StartsWith("4.0.2"))
+						else if (!string.IsNullOrEmpty(version))
 						{
-							serializer.NameSpace = @"http://www.buildingsmart-tech.org/ifcXML/IFC4/Add2";
-							serializer.SchemaLocation = @"http://standards.buildingsmart.org/IFC/RELEASE/IFC4/ADD2/XML/IFC4_ADD2.xsd";
-						}
-						else if (version.StartsWith("4.1"))
-						{
-							serializer.NameSpace = @"http://www.buildingsmart-tech.org/ifc/IFC4x1/final";
-							serializer.SchemaLocation = @"http://standards.buildingsmart.org/IFC/RELEASE/IFC4_1/FINAL/XML/IFC4x1.xsd";
-						}
-						else if (version.StartsWith("4.2"))
-						{
-							serializer.NameSpace = @"http://www.buildingsmart-tech.org/ifc/review/IFC4x2/unspecifiedrelease";
-							serializer.SchemaLocation = @"http://standards.buildingsmart.org/IFC/DEV/IFC4_2/FINAL/XML/IFC4x2.xsd";
+							if (version.StartsWith("2.3.0"))
+							{
+								serializer.NameSpace = @"http://www.iai-tech.org/ifcXML/IFC2x3/FINAL";
+								serializer.SchemaLocation = @"http://standards.buildingsmart.org/IFC/RELEASE/IFC2x3/TC1/XML/IFC2X3.xsd";
+							}
+							if (version.StartsWith("4.0.2"))
+							{
+								serializer.NameSpace = @"http://www.buildingsmart-tech.org/ifcXML/IFC4/Add2";
+								serializer.SchemaLocation = @"http://standards.buildingsmart.org/IFC/RELEASE/IFC4/ADD2/XML/IFC4_ADD2.xsd";
+							}
+							else if (version.StartsWith("4.1"))
+							{
+								serializer.NameSpace = @"http://www.buildingsmart-tech.org/ifc/IFC4x1/final";
+								serializer.SchemaLocation = @"http://standards.buildingsmart.org/IFC/RELEASE/IFC4_1/FINAL/XML/IFC4x1.xsd";
+							}
+							else if (version.StartsWith("4.2"))
+							{
+								serializer.NameSpace = @"http://www.buildingsmart-tech.org/ifc/review/IFC4x2/unspecifiedrelease";
+								serializer.SchemaLocation = @"http://standards.buildingsmart.org/IFC/RELEASE/IFC4_1/FINAL/XML/IFC4x1.xsd";
+							}
 						}
 						mapFormatData.Add(docFormat.FormatType, serializer);
 						break;
-
 				}
 			}
 
@@ -5675,7 +5683,9 @@ namespace IfcDoc
 																htmDef.Write("<tr><td>");
 																htmDef.Write(docConstant.Name);
 																htmDef.Write("</td><td>");
-																htmDef.Write(docConstant.DocumentationHtmlNoParagraphs());
+																string constantDocumentation = docConstant.DocumentationHtmlNoParagraphs();
+																constantDocumentation = Regex.Replace(constantDocumentation, "../(../)+figures", "../../../figures");
+																htmDef.Write(constantDocumentation);
 																htmDef.Write("</td></tr>");
 															}
 															htmDef.WriteLine("</table>");
@@ -6433,6 +6443,7 @@ namespace IfcDoc
 
 								htmSection.WriteLine("<table class=\"gridtable\">");
 								htmSection.WriteLine("<tr><th>Format</th><th>URL</th></tr>");
+								
 								foreach (DocFormat docFormat in docPublication.Formats)
 								{
 									if (docFormat.FormatOptions != DocFormatOptionEnum.None)
@@ -6446,7 +6457,8 @@ namespace IfcDoc
 										}
 
 										//string formaturi = uriprefix + "/" + version + "_" + release.ToUpper() + "." + docFormat.ExtensionSchema;
-										string formaturi = uriprefix + "/" + "IFC4" /*version*/ + "." + docFormat.ExtensionSchema;
+										string formatType = docFormat.FormatType == DocFormatSchemaEnum.STEP ? "EXPRESS" : docFormat.FormatType.ToString();
+										string formaturi = uriprefix + "/" + formatType + "/" + version + "." + docFormat.ExtensionSchema;
 
 										htmSection.WriteLine("<tr><td>" + formatdesc + "</td><td><a href=\"" + formaturi + "\" target=\"_blank\">" + formaturi + "</a></td></tr>");
 									}

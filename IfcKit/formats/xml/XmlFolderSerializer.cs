@@ -226,7 +226,7 @@ namespace BuildingSmart.Serialization.Xml
 							{
 								nestedProperties.Add(propertyInfo.Name);
 								string htmlPath = Path.Combine(folderPath, propertyInfo.Name + ".html");
-								File.WriteAllText(htmlPath, html.TrimEnd() + Environment.NewLine, Encoding.UTF8);
+								File.WriteAllText(htmlPath, html.TrimEnd() + Environment.NewLine, new UTF8Encoding(false));
 								continue;
 							}
 						}
@@ -244,7 +244,7 @@ namespace BuildingSmart.Serialization.Xml
 							{
 								nestedProperties.Add(propertyInfo.Name);
 								string txtPath = Path.Combine(folderPath, propertyInfo.Name + fileExtension);
-								File.WriteAllText(txtPath, txt.TrimEnd() + Environment.NewLine, Encoding.UTF8);
+								File.WriteAllText(txtPath, txt.TrimEnd() + Environment.NewLine, new UTF8Encoding(false));
 								continue;
 							}
 						}

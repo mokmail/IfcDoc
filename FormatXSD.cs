@@ -160,11 +160,6 @@ namespace IfcDoc.Format.XSD
 
 		private static string FormatAttribute(DocEntity docEntity, DocAttribute docAttr, Dictionary<string, DocObject> map)
 		{
-			if (docAttr.Name.Equals("InnerCoordIndices"))
-			{
-				docAttr.ToString();
-			}
-
 			DocObject mapDef = null;
 			map.TryGetValue(docAttr.DefinedType, out mapDef);
 
