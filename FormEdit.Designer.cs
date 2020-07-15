@@ -50,6 +50,7 @@
 			this.toolStripMenuItemContextInsertEnumeration = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItemContextInsertConstant = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItemContextInsertSelect = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripMenuItemContextInsertSelectItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItemContextInsertEntity = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItemContextInsertAttribute = new System.Windows.Forms.ToolStripMenuItem();
 			this.toolStripMenuItemContextInsertPset = new System.Windows.Forms.ToolStripMenuItem();
@@ -372,6 +373,7 @@
             this.toolStripMenuItemContextInsertEnumeration,
             this.toolStripMenuItemContextInsertConstant,
             this.toolStripMenuItemContextInsertSelect,
+            this.toolStripMenuItemContextInsertSelectItem,
             this.toolStripMenuItemContextInsertEntity,
             this.toolStripMenuItemContextInsertAttribute,
             this.toolStripMenuItemContextInsertPset,
@@ -481,6 +483,12 @@
 			resources.ApplyResources(this.toolStripMenuItemContextInsertSelect, "toolStripMenuItemContextInsertSelect");
 			this.toolStripMenuItemContextInsertSelect.Name = "toolStripMenuItemContextInsertSelect";
 			this.toolStripMenuItemContextInsertSelect.Click += new System.EventHandler(this.toolStripMenuItemInsertSelect_Click);
+			// 
+			// toolStripMenuItemContextInsertSelectItem
+			// 
+			this.toolStripMenuItemContextInsertSelectItem.Name = "toolStripMenuItemContextInsertSelectItem";
+			resources.ApplyResources(this.toolStripMenuItemContextInsertSelectItem, "toolStripMenuItemContextInsertSelectItem");
+			this.toolStripMenuItemContextInsertSelectItem.Click += new System.EventHandler(this.toolStripMenuItemContextInsertSelectItem_Click);
 			// 
 			// toolStripMenuItemContextInsertEntity
 			// 
@@ -2529,5 +2537,6 @@
 		private System.Windows.Forms.ToolStripMenuItem toolStripMenuItemContextIncludePropertyConstant;
 		private System.Windows.Forms.ToolStripMenuItem toolStripMenuItemContextIncludeQuantity;
 		private System.Windows.Forms.ToolStripMenuItem toolStripMenuItemCSharp;
+		private System.Windows.Forms.ToolStripMenuItem toolStripMenuItemContextInsertSelectItem;
 	}
 }

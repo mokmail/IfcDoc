@@ -232,6 +232,7 @@
     <Compile Include="IfcDocUtils.cs" />
     <Compile Include="SchemaSVG.cs" />
     <Compile Include="SchemaXsd.cs" />
+    <Compile Include="System\ComponentModel\CustomComponentResourceManager.cs" />
     <Compile Include="ThemedTreeView.cs">
       <SubType>Component</SubType>
     </Compile>

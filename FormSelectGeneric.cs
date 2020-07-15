@@ -25,13 +25,13 @@ namespace IfcDoc
 			{
 				ListViewItem lvi = new ListViewItem();
 				lvi.Tag = generic;
-				if (!string.IsNullOrEmpty(generic.Name))
+				if (generic.Name != null)
 				{
 					lvi.Text = generic.Name + (processed.ContainsKey(generic.Name) ? "_" + BuildingSmart.Utilities.Conversion.GlobalId.Format(generic.Uuid) : "");
 				}
 				else
 				{
-					lvi.Text = BuildingSmart.Utilities.Conversion.GlobalId.Format(generic.Uuid);
+					lvi.Text = "";
 				}
 
 				lvi.ImageIndex = 0;
@@ -44,7 +44,7 @@ namespace IfcDoc
 			}
 		}
 
-	
+
 		public T Selection
 		{
 			get
@@ -56,5 +56,8 @@ namespace IfcDoc
 				return null;
 			}
 		}
+	}
+	public class FormSelectGeneric : Form
+	{
 	}
 }
