@@ -118,7 +118,7 @@ namespace IfcDoc
 					{
 						// export property sets and quantity sets
 						IfcProjectLibrary ifcProjectLibrary = generatePropertyLibrary(docProject, included);
-						StepSerializer format = new StepSerializer(ifcProjectLibrary.GetType());
+						StepSerializer format = new StepSerializer(ifcProjectLibrary.GetType(), null, docProject.GetSchemaIdentifier(), docProject.GetSchemaVersion(), "IfcDoc " + typeof(DocProject).Assembly.GetName().Version);
 						format.WriteObject(stream, ifcProjectLibrary);
 					}
 					break;
