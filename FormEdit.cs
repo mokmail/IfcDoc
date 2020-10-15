@@ -4696,6 +4696,45 @@ namespace IfcDoc
 
 		private void toolStripMenuItemContextInsertSelectItem_Click(object sender, EventArgs e)
 		{
+			List<DocDefinition> selectItemReferences = new List<DocDefinition>();
+
+			foreach (DocSection docSection in m_project.Sections)
+			{
+				foreach (DocSchema docSchema in docSection.Schemas)
+				{
+					selectItemReferences.AddRange(docSchema.Entities.Cast<DocDefinition>().ToList());
+					selectItemReferences.AddRange(docSchema.Types.Cast<DocDefinition>().ToList());
+					/*if (docSchema.Name == "IfcMeasureResource" )
+					{*/
+					foreach (DocDefinition docDef in docSchema.Types)
+						{
+							if (docDef is DocEnumeration docEnum)
+							{
+								selectItemReferences.Add(docEnum);
+							}
+							else if (docDef is DocSelect docSelect)
+							{
+								selectItemReferences.Add(docSelect);
+							}
+						}
+					//}
+				}
+			}
+			using (FormSelectGeneric<DocDefinition> form = new FormSelectGeneric<DocDefinition>(m_project, null, selectItemReferences.OrderBy(item => item.Name).ToList()))
+			{
+				if (form.ShowDialog(this) == DialogResult.OK && form.Selection != null)
+				{
+					DocDefinition docDefinition = form.Selection;
+					DocSelectItem docSelectItem = new DocSelectItem();
+					docSelectItem.Name = docDefinition.Name;
+					if (this.treeView.SelectedNode.Tag is DocSelect docSelect)
+					{
+						docSelect.Selects.Add(docSelectItem);
+					}
+					this.treeView.SelectedNode = this.LoadNode(this.treeView.SelectedNode, docSelectItem, docSelectItem.Name, false);
+				}
+			}
+			/*
 			TreeNode tn = this.treeView.SelectedNode;
 			while (!(tn.Tag is DocSchema))
 			{
@@ -4710,6 +4749,10 @@ namespace IfcDoc
 					if (docDef is DocEnumeration docEnum)
 					{
 						selectItemReferences.Add(docEnum);
+					}
+					else if (docDef is DocSelect docSelect)
+					{
+						selectItemReferences.Add(docSelect);
 					}
 				}
 
@@ -4728,7 +4771,7 @@ namespace IfcDoc
 					}
 				}
 			}
-
+			*/
 			/*
 			while (entity.node.)
 			using (FormSelectGeneric<DocSelectItem> form = new FormSelectGeneric<DocSelectItem>(m_project, null, m_project.GetSchema()))
