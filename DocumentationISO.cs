@@ -4999,7 +4999,12 @@ namespace IfcDoc
 				}
 			}
 			else
-			{
+			{/*
+				using (FormatHTM htmSection = new FormatHTM(path + "/index.htm", mapEntity, mapSchema, included))
+				{
+
+					htmSection.WriteLinkPage(path + "/index.htm", docPublication);
+				}*/
 				using (FormatHTM htmSection = new FormatHTM(path + "\\cover.htm", mapEntity, mapSchema, included))
 				{
 					htmSection.WriteHeader(docPublication.Name, 0, docPublication.Header);
@@ -5010,7 +5015,7 @@ namespace IfcDoc
 						"    parent.index.location.replace(\"credits.htm\");\r\n" +
 						"//-->\r\n" +
 						"</script>\r\n");
-					htmSection.WriteLine(docPublication.DocumentationHtml());
+					htmSection.WriteLine(docPublication.Documentation);
 					htmSection.WriteFooter(docPublication.Footer);
 				}
 			}
