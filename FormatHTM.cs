@@ -3033,7 +3033,7 @@ namespace IfcDoc.Format.HTM
 					string localdesc = doclocal.DocumentationHtmlNoParagraphs();
 
 					string localid = doclocal.Locale.Substring(0, 2).ToLower();
-					if (localid.Equals("en", StringComparison.InvariantCultureIgnoreCase) && localdesc == null)
+					if (localid.Equals("en", StringComparison.InvariantCultureIgnoreCase) && string.IsNullOrEmpty(localdesc))
 					{
 						localdesc = entity.DocumentationHtmlNoParagraphs();
 						defaultdesc = entity.DocumentationHtmlNoParagraphs();
