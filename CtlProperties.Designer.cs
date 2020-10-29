@@ -534,7 +534,8 @@
             this.comboBoxIdentityStatus.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.comboBoxIdentityStatus.FormattingEnabled = true;
             this.comboBoxIdentityStatus.Items.AddRange(new object[] {
-            resources.GetString("comboBoxIdentityStatus.Items"),
+			resources.GetString("comboBoxIdentityStatus.Item"),
+			resources.GetString("comboBoxIdentityStatus.Items"),
             resources.GetString("comboBoxIdentityStatus.Items1"),
             resources.GetString("comboBoxIdentityStatus.Items2"),
             resources.GetString("comboBoxIdentityStatus.Items3"),

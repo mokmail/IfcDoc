@@ -1205,7 +1205,14 @@ namespace IfcDoc
 
 		private void comboBoxIdentityStatus_SelectedIndexChanged(object sender, EventArgs e)
 		{
-			this.m_target.Status = this.comboBoxIdentityStatus.Text;
+			if (this.comboBoxIdentityStatus.Text != "")
+			{
+				this.m_target.Status = this.comboBoxIdentityStatus.Text;
+			}
+			else
+			{
+				this.m_target.Status = null;
+			}
 
 			if (this.SchemaChanged != null)
 			{
@@ -1215,7 +1222,14 @@ namespace IfcDoc
 
 		private void comboBoxIdentityStatus_TextChanged(object sender, EventArgs e)
 		{
-			this.m_target.Status = this.comboBoxIdentityStatus.Text;
+			if (this.comboBoxIdentityStatus.Text != "")
+			{
+				this.m_target.Status = this.comboBoxIdentityStatus.Text;
+			}
+			else
+			{
+				this.m_target.Status = null;
+			}
 		}
 
 		private void textBoxIdentityAuthor_TextChanged(object sender, EventArgs e)
