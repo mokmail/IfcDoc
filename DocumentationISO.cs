@@ -4991,7 +4991,7 @@ namespace IfcDoc
 			{
 				// separate cover page without frame
 				System.IO.File.SetAttributes(indexPath, System.IO.FileAttributes.Normal); // strip off read-only flag from copying from source control
-				using (FormatHTM htmSection = new FormatHTM(indexPath + "\\index.htm", mapEntity, mapSchema, included))
+				using (FormatHTM htmSection = new FormatHTM(indexPath, mapEntity, mapSchema, included))
 				{
 					htmSection.WriteHeader(docPublication.Name, 0, null); // no text for header
 					htmSection.WriteLine(docPublication.DocumentationHtml());
