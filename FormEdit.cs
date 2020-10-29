@@ -9839,7 +9839,7 @@ namespace IfcDoc
 				{
 					docTargetSchemaRef = docSchemaRef;
 					int index = docSchema.SchemaRefs.IndexOf(docSchemaRef);
-					tnTargetSchema = tnSourceSchema.Nodes[7].Nodes[index];
+					if (tnSourceSchema.Nodes[7].Nodes.Count != 0) tnTargetSchema = tnSourceSchema.Nodes[7].Nodes[index];
 					break;
 				}
 			}
