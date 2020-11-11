@@ -4661,7 +4661,7 @@ namespace IfcDoc
 		{
 			docPublication.ErrorLog.Clear();
 
-			string path = pathPublication + @"\html";
+			string path = pathPublication + @"\HTML";//html";
 			System.IO.Directory.CreateDirectory(pathPublication); // ensure directory exists
 			System.IO.Directory.CreateDirectory(path); // ensure directory exists
 

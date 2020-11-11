@@ -418,7 +418,15 @@ namespace IfcDoc
 			DocDefinition entity = this.treeViewAlphabetical.SelectedNode.Tag as DocDefinition;
 			if (entity != null)
 			{
-				this.treeViewInheritance.SelectedNode = this.m_mapInherit[entity];
+				if (this.m_mapInherit.TryGetValue(entity, out TreeNode tn))
+				{
+					this.treeViewInheritance.SelectedNode = tn;
+				}
+				else
+				{
+					
+				}
+				
 			}
 
 			this.LoadPredefined();
