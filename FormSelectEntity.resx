@@ -123,7 +123,7 @@
   </data>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="buttonCancel.Location" type="System.Drawing.Point, System.Drawing">
-    <value>297, 471</value>
+    <value>297, 481</value>
   </data>
   <data name="buttonCancel.Size" type="System.Drawing.Size, System.Drawing">
     <value>75, 23</value>
@@ -145,13 +145,13 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;buttonCancel.ZOrder" xml:space="preserve">
-    <value>3</value>
+    <value>5</value>
   </data>
   <data name="buttonOK.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Bottom, Right</value>
   </data>
   <data name="buttonOK.Location" type="System.Drawing.Point, System.Drawing">
-    <value>216, 471</value>
+    <value>216, 481</value>
   </data>
   <data name="buttonOK.Size" type="System.Drawing.Size, System.Drawing">
     <value>75, 23</value>
@@ -172,7 +172,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;buttonOK.ZOrder" xml:space="preserve">
-    <value>4</value>
+    <value>6</value>
   </data>
   <data name="treeViewInheritance.Dock" type="System.Windows.Forms.DockStyle, System.Windows.Forms">
     <value>Fill</value>
@@ -181,7 +181,7 @@
     <value>3, 3</value>
   </data>
   <data name="treeViewInheritance.Size" type="System.Drawing.Size, System.Drawing">
-    <value>346, 376</value>
+    <value>346, 332</value>
   </data>
   <data name="treeViewInheritance.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -205,7 +205,7 @@
     <value>False</value>
   </data>
   <data name="comboBoxPredefined.Location" type="System.Drawing.Point, System.Drawing">
-    <value>12, 440</value>
+    <value>12, 450</value>
   </data>
   <data name="comboBoxPredefined.Size" type="System.Drawing.Size, System.Drawing">
     <value>359, 21</value>
@@ -223,7 +223,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;comboBoxPredefined.ZOrder" xml:space="preserve">
-    <value>2</value>
+    <value>4</value>
   </data>
   <data name="labelPredefined.AutoSize" type="System.Boolean, mscorlib">
     <value>True</value>
@@ -232,7 +232,7 @@
     <value>False</value>
   </data>
   <data name="labelPredefined.Location" type="System.Drawing.Point, System.Drawing">
-    <value>9, 423</value>
+    <value>9, 432</value>
   </data>
   <data name="labelPredefined.Size" type="System.Drawing.Size, System.Drawing">
     <value>88, 13</value>
@@ -253,7 +253,7 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;labelPredefined.ZOrder" xml:space="preserve">
-    <value>1</value>
+    <value>3</value>
   </data>
   <data name="tabControl1.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
     <value>Top, Bottom, Left, Right</value>
@@ -265,7 +265,7 @@
     <value>3, 3, 3, 3</value>
   </data>
   <data name="tabPage1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>352, 382</value>
+    <value>352, 338</value>
   </data>
   <data name="tabPage1.TabIndex" type="System.Int32, mscorlib">
     <value>0</value>
@@ -292,7 +292,7 @@
     <value>3, 3</value>
   </data>
   <data name="treeViewAlphabetical.Size" type="System.Drawing.Size, System.Drawing">
-    <value>346, 376</value>
+    <value>346, 332</value>
   </data>
   <data name="treeViewAlphabetical.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -316,7 +316,7 @@
     <value>3, 3, 3, 3</value>
   </data>
   <data name="tabPage2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>352, 382</value>
+    <value>352, 338</value>
   </data>
   <data name="tabPage2.TabIndex" type="System.Int32, mscorlib">
     <value>1</value>
@@ -340,7 +340,7 @@
     <value>12, 12</value>
   </data>
   <data name="tabControl1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>360, 408</value>
+    <value>360, 364</value>
   </data>
   <data name="tabControl1.TabIndex" type="System.Int32, mscorlib">
     <value>5</value>
@@ -355,7 +355,67 @@
     <value>$this</value>
   </data>
   <data name="&gt;&gt;tabControl1.ZOrder" xml:space="preserve">
+    <value>2</value>
+  </data>
+  <data name="labelPredefinedEnums.AutoSize" type="System.Boolean, mscorlib">
+    <value>True</value>
+  </data>
+  <data name="labelPredefinedEnums.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="labelPredefinedEnums.ImeMode" type="System.Windows.Forms.ImeMode, System.Windows.Forms">
+    <value>NoControl</value>
+  </data>
+  <data name="labelPredefinedEnums.Location" type="System.Drawing.Point, System.Drawing">
+    <value>8, 386</value>
+  </data>
+  <data name="labelPredefinedEnums.Size" type="System.Drawing.Size, System.Drawing">
+    <value>123, 13</value>
+  </data>
+  <data name="labelPredefinedEnums.TabIndex" type="System.Int32, mscorlib">
+    <value>6</value>
+  </data>
+  <data name="labelPredefinedEnums.Text" xml:space="preserve">
+    <value>Predefined Type Enums:</value>
+  </data>
+  <data name="&gt;&gt;labelPredefinedEnums.Name" xml:space="preserve">
+    <value>labelPredefinedEnums</value>
+  </data>
+  <data name="&gt;&gt;labelPredefinedEnums.Type" xml:space="preserve">
+    <value>System.Windows.Forms.Label, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;labelPredefinedEnums.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;labelPredefinedEnums.ZOrder" xml:space="preserve">
     <value>0</value>
+  </data>
+  <data name="comboBoxPredefinedEnums.Anchor" type="System.Windows.Forms.AnchorStyles, System.Windows.Forms">
+    <value>Bottom, Left, Right</value>
+  </data>
+  <data name="comboBoxPredefinedEnums.Enabled" type="System.Boolean, mscorlib">
+    <value>False</value>
+  </data>
+  <data name="comboBoxPredefinedEnums.Location" type="System.Drawing.Point, System.Drawing">
+    <value>12, 406</value>
+  </data>
+  <data name="comboBoxPredefinedEnums.Size" type="System.Drawing.Size, System.Drawing">
+    <value>359, 21</value>
+  </data>
+  <data name="comboBoxPredefinedEnums.TabIndex" type="System.Int32, mscorlib">
+    <value>7</value>
+  </data>
+  <data name="&gt;&gt;comboBoxPredefinedEnums.Name" xml:space="preserve">
+    <value>comboBoxPredefinedEnums</value>
+  </data>
+  <data name="&gt;&gt;comboBoxPredefinedEnums.Type" xml:space="preserve">
+    <value>System.Windows.Forms.ComboBox, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </data>
+  <data name="&gt;&gt;comboBoxPredefinedEnums.Parent" xml:space="preserve">
+    <value>$this</value>
+  </data>
+  <data name="&gt;&gt;comboBoxPredefinedEnums.ZOrder" xml:space="preserve">
+    <value>1</value>
   </data>
   <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
     <value>True</value>
@@ -364,7 +424,7 @@
     <value>6, 13</value>
   </data>
   <data name="$this.ClientSize" type="System.Drawing.Size, System.Drawing">
-    <value>384, 504</value>
+    <value>384, 514</value>
   </data>
   <data name="$this.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>

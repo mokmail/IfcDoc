@@ -187,6 +187,7 @@ namespace IfcDoc
 						if (docEntity != null && docPset.ApplicableType != null)
 						{
 							string[] parts = docPset.ApplicableType.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+
 							foreach (string part in parts)
 							{
 								DocEntity docBase = docEntity;
