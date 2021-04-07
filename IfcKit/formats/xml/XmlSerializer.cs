@@ -178,8 +178,13 @@ namespace BuildingSmart.Serialization.Xml
 				t = GetTypeByName(typename);
 				if (!string.IsNullOrEmpty(reader.LocalName) && string.Compare(reader.LocalName, typename) != 0)
 				{
-					Type testType = GetTypeByName(reader.LocalName);
-					if (testType != null && (t == null || testType.IsSubclassOf(t)))
+					string testName = reader.LocalName;
+					if (testName.EndsWith("-wrapper"))
+					{
+						testName = testName.Substring(0, testName.Length - 8);
+					}
+					Type testType = GetTypeByName(testName);
+					if (testType != null && (t == null || (t.IsInterface && t.IsAssignableFrom(testType)) || testType.IsSubclassOf(t)))
 						t = testType;
 				}
 			}
