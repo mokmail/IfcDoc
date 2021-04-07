@@ -1096,7 +1096,9 @@ namespace IfcDoc
 					result = m_Project.Quantities.Where(x => string.Compare(x.UniqueId, id) == 0).FirstOrDefault();
 					if (result == null)
 					{
-						DocQuantity existing = host.Quantities.Where(x => string.Compare(x.Name, template.Name) == 0).FirstOrDefault();
+						DocQuantity existing = null;
+						if(host != null)
+							existing = host.Quantities.Where(x => string.Compare(x.Name, template.Name) == 0).FirstOrDefault();
 						if (existing == null)
 						{
 							change = "  NEW Quantity " + template.Name;
@@ -1172,7 +1174,9 @@ namespace IfcDoc
 					result = m_Project.Properties.Where(x => string.Compare(x.UniqueId, id) == 0).FirstOrDefault();
 					if (result == null)
 					{
-						DocProperty existing = host.Properties.Where(x => string.Compare(x.Name, template.Name) == 0).FirstOrDefault();
+						DocProperty existing = null;
+						if(host != null)
+							existing = host.Properties.Where(x => string.Compare(x.Name, template.Name) == 0).FirstOrDefault();
 						if (existing == null)
 						{
 							change = "  NEW Property " + template.Name;
@@ -1239,7 +1243,7 @@ namespace IfcDoc
 					if (enumeration != null)
 					{
 						DocPropertyEnumeration propertyEnumeration = null;
-						if (propertyEnumerations.TryGetValue(propertyEnumeration.Name, out propertyEnumeration))
+						if (propertyEnumerations.TryGetValue(enumeration.Name, out propertyEnumeration))
 							property.Enumeration = propertyEnumeration;
 						else
 						{
