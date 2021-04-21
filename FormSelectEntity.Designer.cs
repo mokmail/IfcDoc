@@ -38,6 +38,8 @@
 			this.tabPage1 = new System.Windows.Forms.TabPage();
 			this.tabPage2 = new System.Windows.Forms.TabPage();
 			this.treeViewAlphabetical = new System.Windows.Forms.TreeView();
+			this.labelPredefinedEnums = new System.Windows.Forms.Label();
+			this.comboBoxPredefinedEnums = new System.Windows.Forms.ComboBox();
 			this.tabControl1.SuspendLayout();
 			this.tabPage1.SuspendLayout();
 			this.tabPage2.SuspendLayout();
@@ -104,12 +106,26 @@
 			this.treeViewAlphabetical.Name = "treeViewAlphabetical";
 			this.treeViewAlphabetical.AfterSelect += new System.Windows.Forms.TreeViewEventHandler(this.treeViewAlphabetical_AfterSelect);
 			// 
+			// labelPredefinedEnums
+			// 
+			resources.ApplyResources(this.labelPredefinedEnums, "labelPredefinedEnums");
+			this.labelPredefinedEnums.Name = "labelPredefinedEnums";
+			// 
+			// comboBoxPredefinedEnums
+			// 
+			resources.ApplyResources(this.comboBoxPredefinedEnums, "comboBoxPredefinedEnums");
+			this.comboBoxPredefinedEnums.FormattingEnabled = true;
+			this.comboBoxPredefinedEnums.Name = "comboBoxPredefinedEnums";
+			this.comboBoxPredefinedEnums.SelectedIndexChanged += new System.EventHandler(this.comboBoxPredefinedEnums_SelectedIndexChanged);
+			// 
 			// FormSelectEntity
 			// 
 			this.AcceptButton = this.buttonOK;
 			resources.ApplyResources(this, "$this");
 			this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
 			this.CancelButton = this.buttonCancel;
+			this.Controls.Add(this.labelPredefinedEnums);
+			this.Controls.Add(this.comboBoxPredefinedEnums);
 			this.Controls.Add(this.tabControl1);
 			this.Controls.Add(this.labelPredefined);
 			this.Controls.Add(this.comboBoxPredefined);
@@ -138,5 +154,7 @@
 		private System.Windows.Forms.TabPage tabPage1;
 		private System.Windows.Forms.TabPage tabPage2;
 		private System.Windows.Forms.TreeView treeViewAlphabetical;
+		private System.Windows.Forms.Label labelPredefinedEnums;
+		private System.Windows.Forms.ComboBox comboBoxPredefinedEnums;
 	}
 }

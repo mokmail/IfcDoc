@@ -317,10 +317,15 @@ namespace IfcDoc
 				return;
 
 			this.labelPredefined.Enabled = false;
+			this.labelPredefinedEnums.Enabled = false;
 			this.comboBoxPredefined.Enabled = false;
+			this.comboBoxPredefinedEnums.Enabled = false;
 			this.comboBoxPredefined.Items.Clear();
+			this.comboBoxPredefinedEnums.Items.Clear();
 			this.comboBoxPredefined.SelectedIndex = -1;
+			this.comboBoxPredefinedEnums.SelectedIndex = -1;
 			this.comboBoxPredefined.Text = String.Empty;
+			this.comboBoxPredefinedEnums.Text = String.Empty;
 
 			if (this.treeViewInheritance.SelectedNode == null)
 				return;
@@ -344,6 +349,7 @@ namespace IfcDoc
 								if (docType is DocEnumeration && docType.Name.Equals(docAttr.DefinedType))
 								{
 									this.comboBoxPredefined.Items.Clear();
+									this.comboBoxPredefinedEnums.Items.Clear();
 
 									// found it
 									DocEnumeration docEnum = (DocEnumeration)docType;
@@ -357,6 +363,37 @@ namespace IfcDoc
 									this.comboBoxPredefined.Enabled = true;
 
 									//return;
+								}
+								else if (docType.Name.Equals(docAttr.DefinedType) && docType is DocSelect docSelect)
+								{
+									this.comboBoxPredefined.Items.Clear();
+									this.comboBoxPredefinedEnums.Items.Clear();
+
+									foreach (DocSection docSection1 in this.m_project.Sections)
+									{
+										foreach (DocSchema docSchema1 in docSection1.Schemas)
+										{
+											foreach (DocType docType1 in docSchema1.Types)
+											{
+												if (docType1 is DocEnumeration docEnumeration)
+												{
+													foreach (DocSelectItem docSelectItem in docSelect.Selects)
+													{
+														if (docSelectItem.Name == docEnumeration.Name)
+														{
+															this.comboBoxPredefinedEnums.Items.Add(docEnumeration);
+														}
+													}
+												}
+											}
+										}
+									}
+
+
+									this.labelPredefinedEnums.Enabled = true;
+									//this.labelPredefined.Enabled = true;
+									//this.comboBoxPredefined.Enabled = true;
+									this.comboBoxPredefinedEnums.Enabled = true;
 								}
 							}
 						}
@@ -396,6 +433,15 @@ namespace IfcDoc
 			}
 		}
 
+		public DocEnumeration SelectedEnumeration
+		{
+			get
+			{
+				return this.comboBoxPredefinedEnums.SelectedItem as DocEnumeration;
+			}
+		}
+
+
 		private void treeViewInheritance_AfterSelect(object sender, TreeViewEventArgs e)
 		{
 			if (this.treeViewInheritance.SelectedNode == null)
@@ -430,6 +476,22 @@ namespace IfcDoc
 			}
 
 			this.LoadPredefined();
+		}
+
+		private void comboBoxPredefinedEnums_SelectedIndexChanged(object sender, EventArgs e)
+		{
+			this.comboBoxPredefined.Items.Clear();
+
+			if (this.comboBoxPredefinedEnums.SelectedItem is DocEnumeration docEnumeration)
+			{
+				foreach(DocConstant docConstant in docEnumeration.Constants)
+				{
+					this.comboBoxPredefined.Items.Add(docConstant);
+				}
+			}
+
+			this.labelPredefined.Enabled = true;
+			this.comboBoxPredefined.Enabled = true;
 		}
 	}
 

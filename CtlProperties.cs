@@ -735,6 +735,13 @@ namespace IfcDoc
 					if (sub.Length > 1)
 					{
 						lvi.SubItems.Add(sub[1]);
+						/*
+						if (sub[1].Contains("("))
+						{
+							string[] enumData = sub[1].Split('(');
+
+							string enumValue = enumData[1].Replace(")", "");
+						}*/
 					}
 
 					this.listViewPsetApplicability.Items.Add(lvi);
@@ -918,7 +925,7 @@ namespace IfcDoc
 						// append predefined type, if any
 						if (form.SelectedConstant != null)
 						{
-							docTemplate.ApplicableType += "/" + form.SelectedConstant.Name;
+							docTemplate.ApplicableType += "/" + form.SelectedEnumeration + "(." + form.SelectedConstant.Name + ".)";
 						}
 
 						this.LoadApplicability();

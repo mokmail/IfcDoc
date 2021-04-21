@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.IO;
 using Microsoft.CSharp;
+using System.Linq;
 
 using IfcDoc.Schema;
 using IfcDoc.Schema.DOC;
@@ -1395,13 +1396,83 @@ namespace IfcDoc.Format.CSC
 			StringBuilder sb = new StringBuilder();
 
 			sb.AppendLine("[Guid(\"" + docSelect.Uuid.ToString() + "\")]");
-			sb.Append("public interface " + docSelect.Name);
 
-			BuildSelectEntries(sb, docSelect, map, included, false);
+			if (map[docSelect.Selects[0].Name] is DocEnumeration)
+			{
+				//check whether we are dealing with a select of exclusively enums
+				var selects = docSelect.Selects.Select(s => map[s.Name]);
+				bool isSelectOfEnums = true;
 
-			sb.AppendLine();
-			sb.AppendLine("{");
-			sb.AppendLine("}");
+				foreach (var sel in selects)
+				{
+					if (!(sel is DocEnumeration))
+					{
+						isSelectOfEnums = false;
+					}
+				}
+
+				if (isSelectOfEnums)
+				{
+					sb.AppendLine();
+					sb.Append("public struct ");
+					sb.AppendLine(docSelect.Name);
+					sb.AppendLine("{");
+
+					//property Value
+					sb.AppendLine("\tpublic Enum" + " Value { get; private set; }");
+					sb.AppendLine();
+
+					DocSchema entitySchema = m_project.GetSchemaOfDefinition(docSelect);
+
+					foreach (var selectItem in docSelect.Selects)
+					{
+						DocEnumeration selectType = (DocEnumeration)map[selectItem.Name];
+
+						DocSchema docSchema = this.m_project.GetSchemaOfDefinition(selectType);
+
+						string schemaPath = "";
+
+						if (docSchema != entitySchema)
+						{
+							//sb.Append("\tBuildingSmart.IFC.");
+							schemaPath = docSchema.Name + ".";
+						}
+
+						//constructor
+						sb.AppendLine("\tpublic " + docSelect.Name + "(" + schemaPath + selectItem.Name + " value)");
+						sb.AppendLine("\t{");
+						sb.AppendLine("\t\tthis.Value = value;");
+						sb.AppendLine("\t}");
+
+						//implicit operator for type
+						sb.AppendLine();
+						sb.Append("\tpublic static implicit operator ");
+						sb.Append(docSelect.Name);
+						sb.Append("(");
+						sb.Append(schemaPath);
+						sb.Append(selectItem.Name);
+						sb.AppendLine(" value)");
+						sb.AppendLine("\t{");
+						sb.Append("\t\treturn new ");
+						sb.Append(docSelect.Name);
+						sb.AppendLine("(value);");
+						sb.AppendLine("\t}");
+						sb.AppendLine();
+					}
+
+					sb.AppendLine("}");
+				}
+			}
+			else
+			{
+				sb.Append("public interface " + docSelect.Name);
+
+				BuildSelectEntries(sb, docSelect, map, included, false);
+
+				sb.AppendLine();
+				sb.AppendLine("{");
+				sb.AppendLine("}");
+			}
 
 			return sb.ToString();
 		}
