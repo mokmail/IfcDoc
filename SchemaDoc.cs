@@ -2652,7 +2652,7 @@ namespace IfcDoc.Schema.DOC
 		[DataMember(Order = 7), Obsolete] private string _FieldType3 { get; set; } // type of custom field #3, e.g. "IfcDistributionSystemTypeEnum"
 		[DataMember(Order = 8), Obsolete] private string _FieldType4 { get; set; } // type of custom field #4, e.g. "IfcFlowDirectionEnum"        
 		[DataMember(Order = 9)] [XmlArray] public List<DocModelRule> Rules { get; protected set; } //NEW IN 2.5
-		[DataMember(Order = 10)] [XmlArray] public List<DocTemplateDefinition> Templates { get; protected set; } // NEW IN 2.7 sub-templates
+		[DataMember(Order = 10)] [XmlArray] [XmlArrayItem(NestingLevel = 1)] public List<DocTemplateDefinition> Templates { get; protected set; } // NEW IN 2.7 sub-templates
 		[DataMember(Order = 11)] [XmlAttribute] public bool IsDisabled { get; set; }
 
 		private bool? _validation; // unserialized; null: no applicable instances; false: one or more failures; true: all pass
