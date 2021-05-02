@@ -26,7 +26,6 @@ namespace BuildingSmart.Serialization.Xml
 		private Dictionary<string, string> m_typeFilePrefix = new Dictionary<string, string>();
 		private Dictionary<string, string> m_typeNoFilePrefix = new Dictionary<string, string>();
 		private Dictionary<Type, string> m_NominatedTypeFilePrefix = new Dictionary<Type, string>();
-		Dictionary<string, DirectoryInfo> overwrittenDirectories = new Dictionary<string, DirectoryInfo>();
 
 		private char[] InvalidFileNameChars = new char[0];
 
@@ -95,9 +94,7 @@ namespace BuildingSmart.Serialization.Xml
 			writeFirstPassForIds(root, new HashSet<string>());
 			var subDirectiories = Directory.GetDirectories(folderPath, "*", SearchOption.AllDirectories);
 			var overwrittenDirectories = writeObjectFolder(Path.Combine(folderPath, removeInvalidFile(root.GetType().Name)+".xml"), root);
-			var namesDirectoriesToDelete = subDirectiories.Except(overwrittenDirectories.Keys);
-			//namesDirectoriesToDelete = namesDirectoriesToDelete.("figures");
-			//var directoriesToDelete = namesDirectoriesToDelete.Select(n => overwrittenDirectories[n]);
+			var namesDirectoriesToDelete = subDirectiories.Except(overwrittenDirectories);
 
 			if (namesDirectoriesToDelete.Any())
 			{
@@ -107,14 +104,14 @@ namespace BuildingSmart.Serialization.Xml
 					{
 						continue;
 					}
-					var filesInDir = Directory.GetFiles(dToDelete);//dToDelete.GetFiles();
-					var dirsInDir = Directory.GetDirectories(dToDelete);//dToDelete.GetDirectories();
+					var filesInDir = Directory.GetFiles(dToDelete);
+					var dirsInDir = Directory.GetDirectories(dToDelete);
 
 					if (filesInDir.Length > 0)
 					{
 						foreach (var file in filesInDir)
 						{
-							File.Delete(file);//file.Delete();
+							File.Delete(file);
 						}
 					}
 
@@ -122,7 +119,7 @@ namespace BuildingSmart.Serialization.Xml
 					{
 						foreach (var dir in dirsInDir)
 						{
-							Directory.Delete(dir);//file.Delete();
+							Directory.Delete(dir);
 						}
 					}
 					Directory.Delete(dToDelete);
@@ -138,8 +135,10 @@ namespace BuildingSmart.Serialization.Xml
 
 			return result;
 		}
-		private Dictionary<string, DirectoryInfo> writeObjectFolder(string filePath, object obj)
+		private HashSet<string> writeObjectFolder(string filePath, object obj)
 		{
+			HashSet<string> overwrittenDirectories = new HashSet<string>();
+
 			_ObjectStore.UnMarkSerialized(obj);
 			Type objectType = obj.GetType(), stringType = typeof(String);
 
@@ -193,8 +192,8 @@ namespace BuildingSmart.Serialization.Xml
 								if (nestingValid && !allSaved)
 								{
 									string nestedPath = Path.Combine(folderPath, removeInvalidFile(propertyInfo.Name));
-									if (!overwrittenDirectories.ContainsKey(nestedPath))
-										overwrittenDirectories.Add(nestedPath, Directory.CreateDirectory(nestedPath));
+									overwrittenDirectories.Add(nestedPath);
+									Directory.CreateDirectory(nestedPath);
 									nestedProperties.Add(propertyInfo.Name);
 									if (xmlArrayItemAttribute.NestingLevel > 1)
 									{
@@ -210,14 +209,14 @@ namespace BuildingSmart.Serialization.Xml
 										foreach (IGrouping<char, object> group in groups)
 										{
 											string alphaPath = Path.Combine(nestedPath, group.Key.ToString());
-											if (!overwrittenDirectories.ContainsKey(alphaPath))
-												overwrittenDirectories.Add(alphaPath, Directory.CreateDirectory(alphaPath));
+											overwrittenDirectories.Add(alphaPath);
+											Directory.CreateDirectory(alphaPath);
 											foreach (object nested in group)
 											{
 												_ObjectStore.MarkSerialized(nested);
 												string nestedObjectPath = isLeaf ? alphaPath : Path.Combine(alphaPath, removeInvalidFile(folderNameProperty.GetValue(nested).ToString()));
-												if (!overwrittenDirectories.ContainsKey(nestedObjectPath))
-													overwrittenDirectories.Add(nestedObjectPath, Directory.CreateDirectory(nestedObjectPath));
+												overwrittenDirectories.Add(nestedObjectPath);
+												Directory.CreateDirectory(nestedObjectPath);
 												string fileName = removeInvalidFile((isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : nested.GetType().Name) + ".xml");
 												queued.Add(new Tuple<string, object, bool>(Path.Combine(nestedObjectPath, fileName), nested, isLeaf));
 											}
@@ -230,8 +229,8 @@ namespace BuildingSmart.Serialization.Xml
 											continue;
 										_ObjectStore.MarkSerialized(nested);
 										string nestedObjectPath = isLeaf ? nestedPath : Path.Combine(nestedPath, removeInvalidFile(isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : folderNameProperty.GetValue(nested).ToString()));
-										if (!overwrittenDirectories.ContainsKey(nestedObjectPath))
-											overwrittenDirectories.Add(nestedObjectPath, Directory.CreateDirectory(nestedObjectPath));
+										overwrittenDirectories.Add(nestedObjectPath);
+										Directory.CreateDirectory(nestedObjectPath);
 										string fileName = removeInvalidFile((isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : nested.GetType().Name) + ".xml");
 										queued.Add(new Tuple<string, object, bool>(Path.Combine(nestedObjectPath, fileName), nested, isLeaf));
 									}
@@ -310,7 +309,7 @@ namespace BuildingSmart.Serialization.Xml
 					}
 				}
 				else
-					writeObjectFolder(o.Item1, o.Item2);
+					overwrittenDirectories.UnionWith(writeObjectFolder(o.Item1, o.Item2));
 			}
 
 			return overwrittenDirectories;
