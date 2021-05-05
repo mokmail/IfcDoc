@@ -191,14 +191,14 @@ namespace BuildingSmart.Serialization.Xml
 								if (nestingValid && !allSaved)
 								{
 									string nestedPath;
-									/*if (propertyInfo.Name == "Templates" && objectType.Name != "DocProject")
+									if (propertyInfo.Name == "Templates" && objectType.Name != "DocProject")
 									{
-										nestedPath = Path.Combine(folderPath, "Sub");
+										nestedPath = folderPath;
 									}
-									else*/
-									//{
+									else
+									{
 										nestedPath = Path.Combine(folderPath, removeInvalidFile(propertyInfo.Name));
-									//}
+									}
 									overwrittenDirectories.Add(nestedPath);
 									Directory.CreateDirectory(nestedPath);
 									nestedProperties.Add(propertyInfo.Name);
@@ -237,19 +237,6 @@ namespace BuildingSmart.Serialization.Xml
 										_ObjectStore.MarkSerialized(nested);
 
 										string folderName = removeInvalidFile(isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : folderNameProperty.GetValue(nested).ToString());
-
-										if (objectType.Name == "DocTemplateDefinition")
-										{
-											string previousFolder = folderPath.Split('\\').Last();
-
-											foreach (string term in previousFolder.Split(' '))
-											{
-												folderName = folderName.Replace(term, "");
-												folderName = folderName.Replace("  ", " ");
-												folderName = folderName.Trim();
-											}
-										}
-
 										string nestedObjectPath = isLeaf ? nestedPath : Path.Combine(nestedPath, folderName);
 										overwrittenDirectories.Add(nestedObjectPath);
 										Directory.CreateDirectory(nestedObjectPath);
@@ -378,91 +365,139 @@ namespace BuildingSmart.Serialization.Xml
 					}
 				}
 			}
-			
+
 			string[] directories = Directory.GetDirectories(folderPath, "*", SearchOption.TopDirectoryOnly);
-			foreach(string directory in directories)
+			if (objectType.Name == "DocTemplateDefinition")
 			{
-				string directoryName = new DirectoryInfo(directory).Name;	
-				PropertyInfo f = GetFieldByName(objectType, directoryName);
-				if (f != null)
+				foreach (string directory in directories)
 				{
-					if (IsEntityCollection(f.PropertyType))
+					PropertyInfo f = GetFieldByName(objectType, "Templates");
+					IEnumerable list = f.GetValue(result) as IEnumerable;
+					Type typeCollection = list.GetType();
+					MethodInfo methodAdd = typeCollection.GetMethod("Add");
+					Type collectionGeneric = typeCollection.GetGenericArguments()[0];
+					List<object> objects = new List<object>();
+					//string[] subDirectories = Directory.GetDirectories(directory, "*", SearchOption.TopDirectoryOnly);
+					//foreach (string subDir in directories)
+					//{
+					string[] subfiles = Directory.GetFiles(directory, "*.xml", SearchOption.TopDirectoryOnly);
+					if (subfiles.Length == 1)
 					{
-						IEnumerable list = f.GetValue(result) as IEnumerable;
-						Type typeCollection = list.GetType();
-						MethodInfo methodAdd = typeCollection.GetMethod("Add");
-						if (methodAdd == null)
+						object o = readFolder(directory, collectionGeneric, instances, queuedObjects);
+						if (o != null)
+							objects.Add(o);
+					}
+					if (subfiles.Length > 1)
+					{
+						foreach (string subfile in subfiles)
 						{
-							throw new Exception("Unsupported collection type " + typeCollection.Name);
-						}
-						Type collectionGeneric = typeCollection.GetGenericArguments()[0];
-						List<object> objects = new List<object>();
-						string[] subDirectories = Directory.GetDirectories(directory, "*", SearchOption.TopDirectoryOnly);
-						foreach(string subDir in subDirectories)
-						{
-							string[] subfiles = Directory.GetFiles(subDir, "*.xml", SearchOption.TopDirectoryOnly);
-							if(subfiles.Length == 1)
-							{
-								object o = readFolder(subDir, collectionGeneric, instances, queuedObjects);
-								if (o != null)
-									objects.Add(o);
-							}
-							if (subfiles.Length > 1)
-							{
-								foreach (string subfile in subfiles)
-								{
-									object o = readFile(subfile, collectionGeneric, instances, queuedObjects);
+							object o = readFile(subfile, collectionGeneric, instances, queuedObjects);
 
-									if (o != null)
-									{
-										try
-										{
-											methodAdd.Invoke(list, new object[] { o }); // perf!!
-										}
-										catch (Exception) { }
-									}
+							if (o != null)
+							{
+								try
+								{
+									methodAdd.Invoke(list, new object[] { o }); // perf!!
 								}
-
+								catch (Exception) { }
 							}
-							else
+						}
+
+					}
+					foreach (object o in objects)
+					{
+						try
+						{
+							methodAdd.Invoke(list, new object[] { o }); // perf!!
+						}
+						catch (Exception) { }
+					}
+					//}
+				}
+
+			}
+			else
+			{
+				foreach (string directory in directories)
+				{
+					string directoryName = new DirectoryInfo(directory).Name;
+					PropertyInfo f = GetFieldByName(objectType, directoryName);
+					if (f != null)
+					{
+						if (IsEntityCollection(f.PropertyType))
+						{
+							IEnumerable list = f.GetValue(result) as IEnumerable;
+							Type typeCollection = list.GetType();
+							MethodInfo methodAdd = typeCollection.GetMethod("Add");
+							if (methodAdd == null)
 							{
-								string[] subsubDirectories = Directory.GetDirectories(subDir, "*", SearchOption.TopDirectoryOnly);
-								foreach(string subsubDir in subsubDirectories)
+								throw new Exception("Unsupported collection type " + typeCollection.Name);
+							}
+							Type collectionGeneric = typeCollection.GetGenericArguments()[0];
+							List<object> objects = new List<object>();
+							string[] subDirectories = Directory.GetDirectories(directory, "*", SearchOption.TopDirectoryOnly);
+							foreach (string subDir in subDirectories)
+							{
+								string[] subfiles = Directory.GetFiles(subDir, "*.xml", SearchOption.TopDirectoryOnly);
+								if (subfiles.Length == 1)
 								{
-									object o = readFolder(subsubDir, collectionGeneric, instances, queuedObjects);
+									object o = readFolder(subDir, collectionGeneric, instances, queuedObjects);
 									if (o != null)
 										objects.Add(o);
 								}
+								if (subfiles.Length > 1)
+								{
+									foreach (string subfile in subfiles)
+									{
+										object o = readFile(subfile, collectionGeneric, instances, queuedObjects);
 
+										if (o != null)
+										{
+											try
+											{
+												methodAdd.Invoke(list, new object[] { o }); // perf!!
+											}
+											catch (Exception) { }
+										}
+									}
+
+								}
+								else if (f.Name != "Templates")
+								{
+									string[] subsubDirectories = Directory.GetDirectories(subDir, "*", SearchOption.TopDirectoryOnly);
+									foreach (string subsubDir in subsubDirectories)
+									{
+										object o = readFolder(subsubDir, collectionGeneric, instances, queuedObjects);
+										if (o != null)
+											objects.Add(o);
+									}
+
+								}
 							}
-						}
-						foreach (object o in objects)
-						{
-							try
+							foreach (object o in objects)
 							{
-								methodAdd.Invoke(list, new object[] { o }); // perf!!
+								try
+								{
+									methodAdd.Invoke(list, new object[] { o }); // perf!!
+								}
+								catch (Exception) { }
 							}
-							catch (Exception) { }
+						}
+						else
+						{
+							object o = readFolder(directory, f.PropertyType, instances, queuedObjects);
+							if (o != null)
+								LoadEntityValue(result, f, o);
 						}
 					}
-					else
-					{
-						object o = readFolder(directory, f.PropertyType, instances, queuedObjects);
-						if (o != null)
-							LoadEntityValue(result, f, o);
-					}
-				}
 
+				}
 			}
 			return result;
 		}
 		private object readFile(string filePath, Type nominatedType, Dictionary<string,object> instances, QueuedObjects queuedObjects)
 		{
 			string fileName = Path.GetFileNameWithoutExtension(filePath);
-			if (fileName == "DocPropertySet")
-			{
-				bool s = true;
-			}
 			Type detectedType = GetTypeByName(fileName);
 			if (detectedType != null && nominatedType != null && !detectedType.IsSubclassOf(nominatedType))
 				detectedType = null;
