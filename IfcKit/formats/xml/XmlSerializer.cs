@@ -1896,7 +1896,10 @@ namespace BuildingSmart.Serialization.Xml
 								string str = obj.ToString();
 								if (!string.IsNullOrEmpty(str))
 								{
-									return validId(str);
+									try
+									{
+										return validId(str);
+									} catch(Exception) { }
 								}
 							}
 						}
