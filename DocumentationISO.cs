@@ -6256,7 +6256,7 @@ namespace IfcDoc
 															}
 
 															// english by default
-															htmDef.WriteLocalizationSection(entity, locales, docPublication);
+															htmDef.WriteLocalizationTable(entity, locales);
 															htmDef.WriteChangeLog(entity, listChangeSets, docPublication);
 
 															htmDef.WriteSummaryHeader("Properties", true, docPublication);
@@ -6342,7 +6342,7 @@ namespace IfcDoc
 														}
 
 														// english by default
-														htmDef.WriteLocalizationSection(entity, locales, docPublication);
+														htmDef.WriteLocalizationTable(entity, locales);
 														htmDef.WriteChangeLog(entity, listChangeSets, docPublication);
 
 														htmDef.WriteSummaryHeader("Quantities", true, docPublication);
