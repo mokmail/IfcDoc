@@ -11,6 +11,7 @@ using HtmlAgilityPack;
 
 using IfcDoc.Schema;
 using IfcDoc.Schema.DOC;
+using IfcDoc.Formats;
 using BuildingSmart.Serialization.Step;
 using BuildingSmart.Serialization.Xml;
 
@@ -536,7 +537,7 @@ namespace IfcDoc
 			int pTagIndex = documentation.IndexOf("<p"), pTagTerminateIndex = documentation.IndexOf("</p>");
 			if (pTagTerminateIndex > 0 && (pTagIndex < 0 || pTagIndex > pTagTerminateIndex))
 				documentation = "<p>" + documentation;
-			documentation = DocumentationISO.UpdateNumbering(documentation, new List<DocumentationISO.ContentRef>(), new List<DocumentationISO.ContentRef>(), null);
+			documentation = ContentRef.UpdateNumbering(documentation, new List<ContentRef>(), new List<ContentRef>(), null);
 			HtmlAgilityPack.HtmlDocument doc = new HtmlAgilityPack.HtmlDocument();
 			doc.LoadHtml(documentation);
 			HtmlNode node = doc.DocumentNode;

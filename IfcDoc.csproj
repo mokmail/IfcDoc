@@ -92,8 +92,8 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="HtmlAgilityPack, Version=1.11.12.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
-      <HintPath>packages\HtmlAgilityPack.1.11.12\lib\Net45\HtmlAgilityPack.dll</HintPath>
+    <Reference Include="HtmlAgilityPack, Version=1.11.34.0, Culture=neutral, PublicKeyToken=bd319b19eaf3b43a, processorArchitecture=MSIL">
+      <HintPath>packages\HtmlAgilityPack.1.11.34\lib\Net45\HtmlAgilityPack.dll</HintPath>
     </Reference>
     <Reference Include="Markdig, Version=0.17.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Markdig.0.17.1\lib\net40\Markdig.dll</HintPath>
@@ -111,7 +111,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ChangeLogGenerator.cs" />
-    <Compile Include="Compiler.cs" />
     <Compile Include="CtlCheckGrid.cs">
       <SubType>Component</SubType>
     </Compile>
@@ -163,9 +162,6 @@
     <Compile Include="DocumentationISO.cs" />
     <Compile Include="DifferenceEngine.cs" />
     <Compile Include="FolderStorage.cs" />
-    <Compile Include="FormatOWL.cs" />
-    <Compile Include="FormatSQL.cs" />
-    <Compile Include="FormatZIP.cs" />
     <Compile Include="FormDatabase.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -230,19 +226,10 @@
       <DependentUpon>FormValidateMappings.cs</DependentUpon>
     </Compile>
     <Compile Include="IfcDocUtils.cs" />
-    <Compile Include="SchemaSVG.cs" />
-    <Compile Include="SchemaXsd.cs" />
     <Compile Include="System\ComponentModel\CustomComponentResourceManager.cs" />
     <Compile Include="ThemedTreeView.cs">
       <SubType>Component</SubType>
     </Compile>
-    <Compile Include="FormatCSC.cs" />
-    <Compile Include="FormatCSV.cs" />
-    <Compile Include="FormatEXP.cs" />
-    <Compile Include="FormatIFD.cs" />
-    <Compile Include="FormatJAV.cs" />
-    <Compile Include="FormatPNG.cs" />
-    <Compile Include="FormatXSD.cs" />
     <Compile Include="FormCode.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -315,7 +302,6 @@
     <Compile Include="FormAbout.Designer.cs">
       <DependentUpon>FormAbout.cs</DependentUpon>
     </Compile>
-    <Compile Include="FormatHTM.cs" />
     <Compile Include="FormGenerate.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -351,10 +337,6 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="SchemaCNF.cs" />
-    <Compile Include="SchemaMvd.cs" />
-    <Compile Include="SchemaPsd.cs" />
-    <Compile Include="FormatXML.cs" />
     <Compile Include="FormEdit.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -366,13 +348,8 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Schema.cs" />
-    <Compile Include="SchemaDoc.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SchemaSch.cs" />
-    <Compile Include="SchemaVex.cs" />
-    <Compile Include="ValuePath.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="CtlCheckGrid.resx">
@@ -580,6 +557,14 @@
     <EmbeddedResource Include="assemblyinfo.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="Formats\IfcDoc.Formats\IfcDoc.Formats.csproj">
+      <Project>{967324dc-be05-4db3-83e9-20839b25d814}</Project>
+      <Name>IfcDoc.Formats</Name>
+    </ProjectReference>
+    <ProjectReference Include="IfcDoc.Schemas\IfcDoc.Schemas\IfcDoc.Schemas.csproj">
+      <Project>{71c466a9-3c25-4a0f-a7a9-81ddf1c3f838}</Project>
+      <Name>IfcDoc.Schemas</Name>
+    </ProjectReference>
     <ProjectReference Include="IfcKit\formats\BuildingSmart.Serialization\BuildingSmart.Serialization.csproj">
       <Project>{36a0328b-1a60-4f07-bc34-4d22a7f65cac}</Project>
       <Name>BuildingSmart.Serialization</Name>

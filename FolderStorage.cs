@@ -16,7 +16,8 @@ using Microsoft.CSharp;
 using IfcDoc.Format.CSC;
 using IfcDoc.Schema.DOC;
 using BuildingSmart.Serialization.Step;
-
+using IfcDoc.Format.XML;
+using IfcDoc.Schema.SVG;
 
 namespace IfcDoc
 {
@@ -232,7 +233,12 @@ namespace IfcDoc
 				{
 					using (IfcDoc.Schema.SVG.SchemaSVG schemaSVG = new IfcDoc.Schema.SVG.SchemaSVG(file, docSchema, project, DiagramFormat.UML))
 					{
-						schemaSVG.Load();
+						using (FormatXML format = new FormatXML(file, typeof(svg), "http://www.w3.org/2000/svg"))
+						{
+							format.Load();
+							svg s = format.Instance as svg;
+							schemaSVG.Load(s);
+						}
 					}
 				}
 			}
@@ -244,7 +250,7 @@ namespace IfcDoc
 			en = System.IO.Directory.EnumerateFiles(path, "*.mvdxml", System.IO.SearchOption.AllDirectories);
 			foreach (string file in en)
 			{
-				IfcDoc.Schema.MVD.SchemaMVD.Load(project, file);
+				IfcDoc.Format.MVDXML.FormatMVDXML.Load(project, file);
 			}
 
 			// examples
