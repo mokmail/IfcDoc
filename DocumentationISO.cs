@@ -3780,40 +3780,49 @@ namespace IfcDoc
 
 				ConceptTemplate mvdTemplate = new ConceptTemplate();
 				Program.ExportMvdTemplate(mvdTemplate, docTemplate, included, false);
-				System.Xml.Serialization.XmlSerializer ser = new System.Xml.Serialization.XmlSerializer(typeof(ConceptTemplate));
-				StringBuilder mvdOutput = new StringBuilder();
-				using (System.IO.Stream streamMVD = new System.IO.MemoryStream())
+				try
 				{
-					ser.Serialize(streamMVD, mvdTemplate, null);
-					streamMVD.Position = 0;
-					using (System.IO.StreamReader reader = new System.IO.StreamReader(streamMVD))
+					System.Xml.Serialization.XmlSerializer ser = new System.Xml.Serialization.XmlSerializer(typeof(ConceptTemplate));
+					StringBuilder mvdOutput = new StringBuilder();
+					using (System.IO.Stream streamMVD = new System.IO.MemoryStream())
 					{
-						while (!reader.EndOfStream)
+						ser.Serialize(streamMVD, mvdTemplate, null);
+						streamMVD.Position = 0;
+						using (System.IO.StreamReader reader = new System.IO.StreamReader(streamMVD))
 						{
-							string mvdLine = reader.ReadLine();
-
-							int pos = 0;
-							while (pos < mvdLine.Length && mvdLine[pos] == ' ')
+							while (!reader.EndOfStream)
 							{
-								mvdOutput.Append("\t");
-								pos++;
-							}
+								string mvdLine = reader.ReadLine();
 
-							// replace any leading spaces with tabs for proper formatting
-							string mvdMark = mvdLine.Substring(pos, mvdLine.Length - pos);
-							mvdOutput.AppendLine(mvdMark);
+								int pos = 0;
+								while (pos < mvdLine.Length && mvdLine[pos] == ' ')
+								{
+									mvdOutput.Append("\t");
+									pos++;
+								}
+
+								// replace any leading spaces with tabs for proper formatting
+								string mvdMark = mvdLine.Substring(pos, mvdLine.Length - pos);
+								mvdOutput.AppendLine(mvdMark);
+							}
 						}
 					}
+
+					if (!docPublication.ISO)
+					{
+						htmTemplate.WriteSummaryHeader("mvdXML Specification", false, docPublication);
+						htmTemplate.WriteLine("<div class=\"xsd\"><code class=\"xsd\">");
+						htmTemplate.WriteExpression(mvdOutput.ToString(), "../../"); //... need to use tabs...
+						htmTemplate.WriteLine("</code></div>");
+						htmTemplate.WriteSummaryFooter(docPublication);
+					}
+				}
+				catch (Exception e)
+				{
+					e.Message.ToString();
 				}
 
-				if (!docPublication.ISO)
-				{
-					htmTemplate.WriteSummaryHeader("mvdXML Specification", false, docPublication);
-					htmTemplate.WriteLine("<div class=\"xsd\"><code class=\"xsd\">");
-					htmTemplate.WriteExpression(mvdOutput.ToString(), "../../"); //... need to use tabs...
-					htmTemplate.WriteLine("</code></div>");
-					htmTemplate.WriteSummaryFooter(docPublication);
-				}
+
 
 				if (docProject.Examples != null)
 				{

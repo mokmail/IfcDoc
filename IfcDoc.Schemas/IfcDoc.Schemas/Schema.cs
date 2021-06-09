@@ -37,8 +37,6 @@ namespace IfcDoc.Schema
 		static Dictionary<Type, IList<FieldInfo>> s_fieldallmap = new Dictionary<Type, IList<FieldInfo>>();
 		static Dictionary<Type, IList<PropertyInfo>> s_propertymapdeclared = new Dictionary<Type, IList<PropertyInfo>>(); // cached properties per type
 		static Dictionary<Type, IList<PropertyInfo>> s_propertymapinverse = new Dictionary<Type, IList<PropertyInfo>>(); // cached properties per type
-		public virtual string Name { get; set; }
-		public virtual string Documentation { get; set; }
 
 		public static IList<FieldInfo> GetFieldsOrdered(Type type)
 		{
