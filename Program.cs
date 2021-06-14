@@ -1241,7 +1241,18 @@ namespace IfcDoc
 
 
 					if (!string.IsNullOrEmpty(simplePropertyTemplate.PrimaryMeasureType))
-						property.PrimaryDataType = simplePropertyTemplate.PrimaryMeasureType;
+					{
+						if (string.Compare(simplePropertyTemplate.PrimaryMeasureType, "IfcLabel", true) == 0) //Defaults to IfcLabel
+						{
+							if (!string.IsNullOrEmpty(property.PrimaryDataType) &&
+								string.Compare(simplePropertyTemplate.PrimaryMeasureType, "IfcLabel", true) != 0)
+							{
+								property.PrimaryDataType = null;
+							}
+						}
+						else
+							property.PrimaryDataType = simplePropertyTemplate.PrimaryMeasureType;
+					}
 					if (!string.IsNullOrEmpty(simplePropertyTemplate.SecondaryMeasureType))
 						property.SecondaryDataType = simplePropertyTemplate.SecondaryMeasureType;
 
