@@ -1270,6 +1270,7 @@ namespace IfcDoc
 							{
 								changes.Add("    NEW PropertyEnumeration " + enumeration.Name);
 								propertyEnumeration = new DocPropertyEnumeration() { Name = enumeration.Name };
+								property.Enumeration = propertyEnumeration;
 								m_Project.PropertyEnumerations.Add(propertyEnumeration);
 							}
 							else
