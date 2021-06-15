@@ -113,10 +113,6 @@ namespace BuildingSmart.Serialization.Xml
 		{
 			int depth = reader.Depth;
 			string readerLocalName = reader.LocalName;
-			if (readerLocalName == "TemplateRules")
-			{
-				bool b = true;
-			}
 			while (reader.NodeType == XmlNodeType.XmlDeclaration || reader.NodeType == XmlNodeType.Whitespace || reader.NodeType == XmlNodeType.Comment || reader.NodeType == XmlNodeType.None)
 				reader.Read();
 			//System.Diagnostics.Debug.WriteLine(new string(' ', indent) + ">>ReadEntity: " + readerLocalName + " " + (parent == null ? "" : parent.GetType().Name + "." + (propInfo == null ? "null" : propInfo.Name)));
