@@ -84,7 +84,7 @@ namespace BuildingSmart.Serialization
 		/// <param name="graph"></param>
 		public abstract void WriteObject(Stream stream, object graph);
 
-		private static ConcurrentDictionary<string, ConstructorInfo> mConstructors = new ConcurrentDictionary<string, ConstructorInfo>();
+		//private static ConcurrentDictionary<string, ConstructorInfo> mConstructors = new ConcurrentDictionary<string, ConstructorInfo>();
 		
 		protected void Initialize(object o, Type t)
 		{

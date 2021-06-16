@@ -26,7 +26,6 @@ namespace BuildingSmart.Serialization.Xml
 		private Dictionary<string, string> m_typeFilePrefix = new Dictionary<string, string>();
 		private Dictionary<string, string> m_typeNoFilePrefix = new Dictionary<string, string>();
 		private Dictionary<Type, string> m_NominatedTypeFilePrefix = new Dictionary<Type, string>();
-		Dictionary<string, DirectoryInfo> overwrittenDirectories = new Dictionary<string, DirectoryInfo>();
 
 		private char[] InvalidFileNameChars = new char[0];
 
@@ -94,10 +93,9 @@ namespace BuildingSmart.Serialization.Xml
 
 			writeFirstPassForIds(root, new HashSet<string>());
 			var subDirectiories = Directory.GetDirectories(folderPath, "*", SearchOption.AllDirectories);
-			var overwrittenDirectories = writeObjectFolder(Path.Combine(folderPath, removeInvalidFile(root.GetType().Name)+".xml"), root);
-			var namesDirectoriesToDelete = subDirectiories.Except(overwrittenDirectories.Keys);
-			//namesDirectoriesToDelete = namesDirectoriesToDelete.("figures");
-			//var directoriesToDelete = namesDirectoriesToDelete.Select(n => overwrittenDirectories[n]);
+			HashSet<string> overwrittenDirectories = new HashSet<string>();
+			writeObjectFolder(Path.Combine(folderPath, removeInvalidFile(root.GetType().Name)+".xml"), root, overwrittenDirectories);
+			var namesDirectoriesToDelete = subDirectiories.Except(overwrittenDirectories);
 
 			if (namesDirectoriesToDelete.Any())
 			{
@@ -107,14 +105,14 @@ namespace BuildingSmart.Serialization.Xml
 					{
 						continue;
 					}
-					var filesInDir = Directory.GetFiles(dToDelete);//dToDelete.GetFiles();
-					var dirsInDir = Directory.GetDirectories(dToDelete);//dToDelete.GetDirectories();
+					var filesInDir = Directory.GetFiles(dToDelete);
+					var dirsInDir = Directory.GetDirectories(dToDelete);
 
 					if (filesInDir.Length > 0)
 					{
 						foreach (var file in filesInDir)
 						{
-							File.Delete(file);//file.Delete();
+							File.Delete(file);
 						}
 					}
 
@@ -122,7 +120,7 @@ namespace BuildingSmart.Serialization.Xml
 					{
 						foreach (var dir in dirsInDir)
 						{
-							Directory.Delete(dir);//file.Delete();
+							Directory.Delete(dir);
 						}
 					}
 					Directory.Delete(dToDelete);
@@ -138,7 +136,7 @@ namespace BuildingSmart.Serialization.Xml
 
 			return result;
 		}
-		private Dictionary<string, DirectoryInfo> writeObjectFolder(string filePath, object obj)
+		private void writeObjectFolder(string filePath, object obj, HashSet<string> overwrittenDirectories)
 		{
 			_ObjectStore.UnMarkSerialized(obj);
 			Type objectType = obj.GetType(), stringType = typeof(String);
@@ -192,9 +190,17 @@ namespace BuildingSmart.Serialization.Xml
 								}
 								if (nestingValid && !allSaved)
 								{
-									string nestedPath = Path.Combine(folderPath, removeInvalidFile(propertyInfo.Name));
-									if (!overwrittenDirectories.ContainsKey(nestedPath))
-										overwrittenDirectories.Add(nestedPath, Directory.CreateDirectory(nestedPath));
+									string nestedPath;
+									if (propertyInfo.Name == "Templates" && objectType.Name != "DocProject")
+									{
+										nestedPath = folderPath;
+									}
+									else
+									{
+										nestedPath = Path.Combine(folderPath, removeInvalidFile(propertyInfo.Name));
+									}
+									overwrittenDirectories.Add(nestedPath);
+									Directory.CreateDirectory(nestedPath);
 									nestedProperties.Add(propertyInfo.Name);
 									if (xmlArrayItemAttribute.NestingLevel > 1)
 									{
@@ -210,14 +216,14 @@ namespace BuildingSmart.Serialization.Xml
 										foreach (IGrouping<char, object> group in groups)
 										{
 											string alphaPath = Path.Combine(nestedPath, group.Key.ToString());
-											if (!overwrittenDirectories.ContainsKey(alphaPath))
-												overwrittenDirectories.Add(alphaPath, Directory.CreateDirectory(alphaPath));
+											overwrittenDirectories.Add(alphaPath);
+											Directory.CreateDirectory(alphaPath);
 											foreach (object nested in group)
 											{
 												_ObjectStore.MarkSerialized(nested);
 												string nestedObjectPath = isLeaf ? alphaPath : Path.Combine(alphaPath, removeInvalidFile(folderNameProperty.GetValue(nested).ToString()));
-												if (!overwrittenDirectories.ContainsKey(nestedObjectPath))
-													overwrittenDirectories.Add(nestedObjectPath, Directory.CreateDirectory(nestedObjectPath));
+												overwrittenDirectories.Add(nestedObjectPath);
+												Directory.CreateDirectory(nestedObjectPath);
 												string fileName = removeInvalidFile((isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : nested.GetType().Name) + ".xml");
 												queued.Add(new Tuple<string, object, bool>(Path.Combine(nestedObjectPath, fileName), nested, isLeaf));
 											}
@@ -229,9 +235,11 @@ namespace BuildingSmart.Serialization.Xml
 										if (nested == null)
 											continue;
 										_ObjectStore.MarkSerialized(nested);
-										string nestedObjectPath = isLeaf ? nestedPath : Path.Combine(nestedPath, removeInvalidFile(isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : folderNameProperty.GetValue(nested).ToString()));
-										if (!overwrittenDirectories.ContainsKey(nestedObjectPath))
-											overwrittenDirectories.Add(nestedObjectPath, Directory.CreateDirectory(nestedObjectPath));
+
+										string folderName = removeInvalidFile(isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : folderNameProperty.GetValue(nested).ToString());
+										string nestedObjectPath = isLeaf ? nestedPath : Path.Combine(nestedPath, folderName);
+										overwrittenDirectories.Add(nestedObjectPath);
+										Directory.CreateDirectory(nestedObjectPath);
 										string fileName = removeInvalidFile((isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : nested.GetType().Name) + ".xml");
 										queued.Add(new Tuple<string, object, bool>(Path.Combine(nestedObjectPath, fileName), nested, isLeaf));
 									}
@@ -310,10 +318,8 @@ namespace BuildingSmart.Serialization.Xml
 					}
 				}
 				else
-					writeObjectFolder(o.Item1, o.Item2);
+					writeObjectFolder(o.Item1, o.Item2, overwrittenDirectories);
 			}
-
-			return overwrittenDirectories;
 		}
 
 		public object ReadObject(string folderPath)
@@ -359,81 +365,133 @@ namespace BuildingSmart.Serialization.Xml
 					}
 				}
 			}
-			
+
 			string[] directories = Directory.GetDirectories(folderPath, "*", SearchOption.TopDirectoryOnly);
-			foreach(string directory in directories)
+			if (objectType.Name == "DocTemplateDefinition")
 			{
-				string directoryName = new DirectoryInfo(directory).Name;	
-				PropertyInfo f = GetFieldByName(objectType, directoryName);
-				if (f != null)
+				foreach (string directory in directories)
 				{
-					if (IsEntityCollection(f.PropertyType))
+					PropertyInfo f = GetFieldByName(objectType, "Templates");
+					IEnumerable list = f.GetValue(result) as IEnumerable;
+					Type typeCollection = list.GetType();
+					MethodInfo methodAdd = typeCollection.GetMethod("Add");
+					Type collectionGeneric = typeCollection.GetGenericArguments()[0];
+					List<object> objects = new List<object>();
+					//string[] subDirectories = Directory.GetDirectories(directory, "*", SearchOption.TopDirectoryOnly);
+					//foreach (string subDir in directories)
+					//{
+					string[] subfiles = Directory.GetFiles(directory, "*.xml", SearchOption.TopDirectoryOnly);
+					if (subfiles.Length == 1)
 					{
-						IEnumerable list = f.GetValue(result) as IEnumerable;
-						Type typeCollection = list.GetType();
-						MethodInfo methodAdd = typeCollection.GetMethod("Add");
-						if (methodAdd == null)
+						object o = readFolder(directory, collectionGeneric, instances, queuedObjects);
+						if (o != null)
+							objects.Add(o);
+					}
+					if (subfiles.Length > 1)
+					{
+						foreach (string subfile in subfiles)
 						{
-							throw new Exception("Unsupported collection type " + typeCollection.Name);
-						}
-						Type collectionGeneric = typeCollection.GetGenericArguments()[0];
-						List<object> objects = new List<object>();
-						string[] subDirectories = Directory.GetDirectories(directory, "*", SearchOption.TopDirectoryOnly);
-						foreach(string subDir in subDirectories)
-						{
-							string[] subfiles = Directory.GetFiles(subDir, "*.xml", SearchOption.TopDirectoryOnly);
-							if(subfiles.Length == 1)
-							{
-								object o = readFolder(subDir, collectionGeneric, instances, queuedObjects);
-								if (o != null)
-									objects.Add(o);
-							}
-							if (subfiles.Length > 1)
-							{
-								foreach (string subfile in subfiles)
-								{
-									object o = readFile(subfile, collectionGeneric, instances, queuedObjects);
+							object o = readFile(subfile, collectionGeneric, instances, queuedObjects);
 
-									if (o != null)
-									{
-										try
-										{
-											methodAdd.Invoke(list, new object[] { o }); // perf!!
-										}
-										catch (Exception) { }
-									}
+							if (o != null)
+							{
+								try
+								{
+									methodAdd.Invoke(list, new object[] { o }); // perf!!
 								}
-
+								catch (Exception) { }
 							}
-							else
+						}
+
+					}
+					foreach (object o in objects)
+					{
+						try
+						{
+							methodAdd.Invoke(list, new object[] { o }); // perf!!
+						}
+						catch (Exception) { }
+					}
+					//}
+				}
+
+			}
+			else
+			{
+				foreach (string directory in directories)
+				{
+					string directoryName = new DirectoryInfo(directory).Name;
+					PropertyInfo f = GetFieldByName(objectType, directoryName);
+					if (f != null)
+					{
+						if (IsEntityCollection(f.PropertyType))
+						{
+							IEnumerable list = f.GetValue(result) as IEnumerable;
+							Type typeCollection = list.GetType();
+							MethodInfo methodAdd = typeCollection.GetMethod("Add");
+							if (methodAdd == null)
 							{
-								string[] subsubDirectories = Directory.GetDirectories(subDir, "*", SearchOption.TopDirectoryOnly);
-								foreach(string subsubDir in subsubDirectories)
+								throw new Exception("Unsupported collection type " + typeCollection.Name);
+							}
+							Type collectionGeneric = typeCollection.GetGenericArguments()[0];
+							List<object> objects = new List<object>();
+							string[] subDirectories = Directory.GetDirectories(directory, "*", SearchOption.TopDirectoryOnly);
+							foreach (string subDir in subDirectories)
+							{
+								string[] subfiles = Directory.GetFiles(subDir, "*.xml", SearchOption.TopDirectoryOnly);
+								if (subfiles.Length == 1)
 								{
-									object o = readFolder(subsubDir, collectionGeneric, instances, queuedObjects);
+									object o = readFolder(subDir, collectionGeneric, instances, queuedObjects);
 									if (o != null)
 										objects.Add(o);
 								}
+								if (subfiles.Length > 1)
+								{
+									foreach (string subfile in subfiles)
+									{
+										object o = readFile(subfile, collectionGeneric, instances, queuedObjects);
 
+										if (o != null)
+										{
+											try
+											{
+												methodAdd.Invoke(list, new object[] { o }); // perf!!
+											}
+											catch (Exception) { }
+										}
+									}
+
+								}
+								else if (f.Name != "Templates")
+								{
+									string[] subsubDirectories = Directory.GetDirectories(subDir, "*", SearchOption.TopDirectoryOnly);
+									foreach (string subsubDir in subsubDirectories)
+									{
+										object o = readFolder(subsubDir, collectionGeneric, instances, queuedObjects);
+										if (o != null)
+											objects.Add(o);
+									}
+
+								}
 							}
-						}
-						foreach (object o in objects)
-						{
-							try
+							foreach (object o in objects)
 							{
-								methodAdd.Invoke(list, new object[] { o }); // perf!!
+								try
+								{
+									methodAdd.Invoke(list, new object[] { o }); // perf!!
+								}
+								catch (Exception) { }
 							}
-							catch (Exception) { }
+						}
+						else
+						{
+							object o = readFolder(directory, f.PropertyType, instances, queuedObjects);
+							if (o != null)
+								LoadEntityValue(result, f, o);
 						}
 					}
-					else
-					{
-						object o = readFolder(directory, f.PropertyType, instances, queuedObjects);
-						if (o != null)
-							LoadEntityValue(result, f, o);
-					}
-				}
 
+				}
 			}
 			return result;
 		}
