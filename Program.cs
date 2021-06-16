@@ -1857,7 +1857,14 @@ namespace IfcDoc
 									NameAlias na = new NameAlias();
 									con.NameAliases.Add(na);
 									na.lang = docLocal.Locale;
-									na.Value = docLocal.Name.Trim();
+									if (!string.IsNullOrEmpty(docLocal.Name))
+									{
+										na.Value = docLocal.Name.Trim();
+									}
+									else
+									{
+										na.Value = "";
+									}
 
 									if (!string.IsNullOrEmpty(docLocal.Documentation))
 									{
