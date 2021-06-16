@@ -440,10 +440,6 @@ namespace BuildingSmart.Serialization.Xml
 		private object readFile(string filePath, Type nominatedType, Dictionary<string,object> instances, QueuedObjects queuedObjects)
 		{
 			string fileName = Path.GetFileNameWithoutExtension(filePath);
-			if (fileName == "DocPropertySet")
-			{
-				bool s = true;
-			}
 			Type detectedType = GetTypeByName(fileName);
 			if (detectedType != null && nominatedType != null && !detectedType.IsSubclassOf(nominatedType))
 				detectedType = null;
