@@ -29,6 +29,7 @@ using IfcDoc.Format.JAV;
 using IfcDoc.Format.EXP;
 using IfcDoc.Format.XSD;
 using IfcDoc.Format.PNG;
+using IfcDoc.Format.MVDXML;
 
 using BuildingSmart.Serialization;
 using BuildingSmart.Serialization.Json;
@@ -685,7 +686,7 @@ namespace IfcDoc
 
 		private void ImportMVD(string filename)
 		{
-			SchemaMVD.Load(this.m_project, filename);
+			FormatMVDXML.Load(this.m_project, filename);
 		}
 
 		private void toolStripMenuItemFileUpdate_Click(object sender, EventArgs e)
@@ -5018,7 +5019,7 @@ namespace IfcDoc
 						{
 							foreach (DocPropertySet docPset in docSchema.PropertySets)
 							{
-								PropertySetDef psd = Program.ExportPsd(docPset, mapPropEnum, this.m_project);
+								PropertySetDef psd = Compiler.ExportPsd(docPset, mapPropEnum, this.m_project);
 								string filename = System.IO.Path.Combine(this.folderBrowserDialog.SelectedPath, docPset.Name + ".xml");
 								using (FormatXML format = new FormatXML(filename, typeof(PropertySetDef)))//, PropertySetDef.DefaultNamespace))
 								{
@@ -5029,7 +5030,7 @@ namespace IfcDoc
 
 							foreach (DocQuantitySet docQset in docSchema.QuantitySets)
 							{
-								QtoSetDef qto = Program.ExportQto(docQset, this.m_project);
+								QtoSetDef qto = Compiler.ExportQto(docQset, this.m_project);
 								string filename = System.IO.Path.Combine(this.folderBrowserDialog.SelectedPath, docQset.Name + ".xml");
 								using (FormatXML format = new FormatXML(filename, typeof(QtoSetDef), QtoSetDef.DefaultNamespace))
 								{
