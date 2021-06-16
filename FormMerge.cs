@@ -16,6 +16,7 @@ using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
 
+using IfcDoc.Schema;
 using IfcDoc.Schema.DOC;
 
 using DifferenceEngine;

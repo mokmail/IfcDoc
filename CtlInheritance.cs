@@ -166,8 +166,8 @@ namespace IfcDoc
 				case ToolMode.Move:
 					if (this.m_selection != null)
 					{
-						this.m_selection._InheritanceDiagramFlag = !this.m_selection._InheritanceDiagramFlag;
-						this.m_selection.Status = (this.m_selection._InheritanceDiagramFlag ? "H" : String.Empty);
+						this.m_selection.InheritanceDiagramFlag = !this.m_selection.InheritanceDiagramFlag;
+						this.m_selection.Status = (this.m_selection.InheritanceDiagramFlag ? "H" : String.Empty);
 						this.Render();
 					}
 					break;
