@@ -41,6 +41,7 @@ using BuildingSmart.Serialization.Step;
 using BuildingSmart.Serialization.Turtle;
 using BuildingSmart.Serialization.Xml;
 using BuildingSmart.Utilities.Conversion;
+using System.Reflection;
 
 namespace IfcDoc
 {
@@ -106,7 +107,7 @@ namespace IfcDoc
 					{
 						// export property sets and quantity sets
 						IfcProjectLibrary ifcProjectLibrary = generatePropertyLibrary(docProject, included);
-						StepSerializer format = new StepSerializer(ifcProjectLibrary.GetType(), null, docProject.GetSchemaIdentifier(), docProject.GetSchemaVersion(), "IfcDoc " + typeof(DocProject).Assembly.GetName().Version);
+						StepSerializer format = new StepSerializer(ifcProjectLibrary.GetType(), null, docProject.GetSchemaIdentifier(), docProject.GetSchemaVersion(), "IfcDoc " + Assembly.GetExecutingAssembly().GetName().Version);//typeof(DocProject).Assembly.GetName().Version);
 						format.WriteObject(stream, ifcProjectLibrary);
 					}
 					break;
