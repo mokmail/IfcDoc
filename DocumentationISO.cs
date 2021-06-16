@@ -6200,7 +6200,7 @@ namespace IfcDoc
 														// generate PSD listing
 														using (FormatXML formatPSD = new FormatXML(path + @"\psd\" + entity.Name + ".xml", typeof(PropertySetDef)))//, PropertySetDef.DefaultNamespace)) // full casing for compatibility with original files
 														{
-															formatPSD.Instance = FormatZIP.ExportPsd(entity, mapPropEnum, docProject);
+															formatPSD.Instance = Compiler.ExportPsd(entity, mapPropEnum, docProject);
 															formatPSD.Save();
 														}
 													}
@@ -6283,7 +6283,7 @@ namespace IfcDoc
 													// generate PSD listing
 													using (FormatXML formatPSD = new FormatXML(path + @"\qto\" + entity.Name + ".xml", typeof(QtoSetDef), QtoSetDef.DefaultNamespace)) // full casing for compatibility with original files
 													{
-														formatPSD.Instance = FormatZIP.ExportQto(entity, docProject);
+														formatPSD.Instance = Compiler.ExportQto(entity, docProject);
 														formatPSD.Save();
 													}
 
