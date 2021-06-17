@@ -241,7 +241,11 @@ namespace BuildingSmart.Serialization.Xml
 										overwrittenDirectories.Add(nestedObjectPath);
 										Directory.CreateDirectory(nestedObjectPath);
 										string fileName = removeInvalidFile((isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : nested.GetType().Name) + ".xml");
-										queued.Add(new Tuple<string, object, bool>(Path.Combine(nestedObjectPath, fileName), nested, isLeaf));
+										Tuple<string, object, bool> tuple = new Tuple<string, object, bool>(Path.Combine(nestedObjectPath, fileName), nested, isLeaf);
+										if (nestedObjectPath.Contains("Partial Templates") && !nestedObjectPath.EndsWith("Geometry"))
+											queued.Insert(0, tuple);
+										else
+											queued.Add(tuple);
 									}
 								}
 							}
@@ -347,7 +351,7 @@ namespace BuildingSmart.Serialization.Xml
 			foreach (string file in Directory.GetFiles(folderPath, "*.*", SearchOption.TopDirectoryOnly))
 			{
 				string extension = Path.GetExtension(file);
-				if (string.Compare(file, ".xml", true) == 0)
+				if (string.Compare(extension, ".xml", true) == 0)
 					continue;
 				PropertyInfo f = GetFieldByName(objectType, Path.GetFileNameWithoutExtension(file));
 				if (f != null)
