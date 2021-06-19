@@ -727,9 +727,10 @@ namespace IfcDoc.Schema.DOC
 		/// <returns></returns>
 		public string GetSchemaIdentifier()
 		{
-			if (this.Sections.Count > 0 && !String.IsNullOrEmpty(this.Sections.Single(s => s.Name == "Scope").Code))
+			var schemaId = this.Sections.Single(s => s.Name == "Scope").Code;
+			if (this.Sections.Count > 0 && !String.IsNullOrEmpty(schemaId))
 			{
-				return this.Sections[0].Code;
+				return schemaId;
 			}
 
 			return "UNSPECIFIEDSCHEMA";
