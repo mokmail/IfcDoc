@@ -13,11 +13,12 @@ using System.Threading.Tasks;
 using System.IO;
 using System.IO.Packaging;
 
+using IfcDoc.Schema;
 using IfcDoc.Format.XML;
 using IfcDoc.Schema.DOC;
 using IfcDoc.Schema.PSD;
 
-namespace IfcDoc
+namespace IfcDoc.Format.ZIP
 {
 	/// <summary>
 	/// Zip file for storing property sets and quantity sets
