@@ -727,7 +727,7 @@ namespace IfcDoc.Schema.DOC
 		/// <returns></returns>
 		public string GetSchemaIdentifier()
 		{
-			if (this.Sections.Count > 0 && !String.IsNullOrEmpty(this.Sections[0].Code))
+			if (this.Sections.Count > 0 && !String.IsNullOrEmpty(this.Sections.Single(s => s.Name == "Scope").Code))
 			{
 				return this.Sections[0].Code;
 			}
