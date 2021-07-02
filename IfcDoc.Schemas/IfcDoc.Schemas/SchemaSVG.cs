@@ -13,7 +13,6 @@ using System.Threading.Tasks;
 using System.Xml.Serialization;
 
 using IfcDoc.Schema.DOC;
-//using IfcDoc.Format.XML;
 
 namespace IfcDoc.Schema.SVG
 {
