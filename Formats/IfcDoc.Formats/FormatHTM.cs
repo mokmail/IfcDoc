@@ -15,6 +15,7 @@ using System.Text.RegularExpressions;
 using HtmlAgilityPack;
 using IfcDoc.Formats;
 using IfcDoc.Schema.DOC;
+using IfcDoc.Schema;
 
 namespace IfcDoc.Format.HTM
 {

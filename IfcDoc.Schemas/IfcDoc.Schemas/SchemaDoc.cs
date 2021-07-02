@@ -22,9 +22,6 @@ using System.Xml.Serialization;
 
 using System.Text.RegularExpressions;
 using BuildingSmart.Utilities.Conversion;
-using BuildingSmart.Serialization;
-
-using HtmlAgilityPack;
 
 namespace IfcDoc.Schema.DOC
 {

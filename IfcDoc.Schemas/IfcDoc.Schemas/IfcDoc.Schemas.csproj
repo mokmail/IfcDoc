@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net451</TargetFramework>
@@ -9,8 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\IfcKit\formats\BuildingSmart.Serialization\BuildingSmart.Serialization.csproj" />
-    <ProjectReference Include="..\..\IfcKit\formats\xml\BuildingSmart.Serialization.Xml.csproj" />
+    <ProjectReference Include="..\..\IfcKit\schemas\BuildingSmart.IFC.csproj" />
     <ProjectReference Include="..\..\IfcKit\utilities\BuildingSmart.Utilities.Conversion\BuildingSmart.Utilities.Conversion.csproj" />
   </ItemGroup>
 

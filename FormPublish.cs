@@ -16,6 +16,7 @@ using System.Text;
 using System.Reflection;
 using System.Windows.Forms;
 using IfcDoc.Schema.DOC;
+using IfcDoc.Schema;
 
 using BuildingSmart.Utilities.Dictionary;
 

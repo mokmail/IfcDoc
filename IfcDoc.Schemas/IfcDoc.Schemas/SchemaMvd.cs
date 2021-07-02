@@ -13,9 +13,7 @@ using System.Text;
 using System.Xml.Serialization;
 using System.Runtime.Serialization;
 
-//using IfcDoc.Format.XML;
 using System.Xml;
-using System.Xml.Schema;
 
 namespace IfcDoc.Schema.MVD
 {

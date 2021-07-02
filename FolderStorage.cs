@@ -13,6 +13,7 @@ using System.Xml.Serialization;
 
 using Microsoft.CSharp;
 
+using IfcDoc.Schema;
 using IfcDoc.Format.CSC;
 using IfcDoc.Schema.DOC;
 using BuildingSmart.Serialization.Step;

@@ -13,7 +13,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Reflection;
 using System.Text;
 using System.Runtime.Serialization;
-using System.Xml.Serialization;
 
 namespace IfcDoc.Schema
 {

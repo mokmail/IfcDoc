@@ -12,13 +12,9 @@ using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
-//using System.Xml.Serialization;
 
 using BuildingSmart.IFC;
 using BuildingSmart.IFC.IfcKernel;
-using BuildingSmart.IFC.IfcMeasureResource;
-using BuildingSmart.IFC.IfcUtilityResource;
-using BuildingSmart.IFC.IfcRepresentationResource;
 
 using IfcDoc.Schema;
 using IfcDoc.Schema.DOC;
@@ -41,18 +37,14 @@ using BuildingSmart.Serialization.Step;
 using BuildingSmart.Serialization.Turtle;
 using BuildingSmart.Serialization.Xml;
 using BuildingSmart.Utilities.Conversion;
-using System.Reflection;
+using IfcDoc.Format.SPF;
+using IfcDoc.Format.IFCXML;
+using IfcDoc.Format.ZIP;
 
 namespace IfcDoc
 {
 	public static class DocumentationISO
 	{
-		public static IfcProjectLibrary generatePropertyLibrary(DocProject docProject, Dictionary<DocObject, bool> included)
-		{
-			IfcProjectLibrary ifcProjectLibrary = new IfcProjectLibrary(new IfcGloballyUniqueId("2OqsW47Dz0LgTmf4DAn1f4"), null, new IfcLabel("IFC Templates"), null, null, null, null, new IfcRepresentationContext[] { }, null);
-			Program.ExportIfc(ifcProjectLibrary, docProject, included);
-			return ifcProjectLibrary;
-		}
 		/// <summary>
 		/// Exports file.
 		/// </summary>
@@ -103,28 +95,22 @@ namespace IfcDoc
 			switch (ext)
 			{
 				case ".ifc": // generate templates in ifc file for property sets and quantity sets
-					using (FileStream stream = new FileStream(filepath, FileMode.Create))
 					{
-						// export property sets and quantity sets
-						IfcProjectLibrary ifcProjectLibrary = generatePropertyLibrary(docProject, included);
-						StepSerializer format = new StepSerializer(ifcProjectLibrary.GetType(), null, docProject.GetSchemaIdentifier(), docProject.GetSchemaVersion(), "IfcDoc " + Assembly.GetExecutingAssembly().GetName().Version);//typeof(DocProject).Assembly.GetName().Version);
-						format.WriteObject(stream, ifcProjectLibrary);
+						IfcProjectLibrary ifcProjectLibrary = Compiler.generatePropertyLibrary(docProject, included);
+						using (FormatSPF spf = new FormatSPF(ifcProjectLibrary, docProject, null, views, new FileStream(filepath, FileMode.Create)))
+						{
+							spf.Save();
+						}
 					}
 					break;
 
 				case ".ifcxml":
-					using (FileStream stream = new FileStream(filepath, FileMode.Create))
 					{
-						// export property sets and quantity sets
-						IfcProjectLibrary ifcProjectLibrary = generatePropertyLibrary(docProject, included);
-						XmlHeader header = new XmlHeader();
-						XmlElementIfc xmlElementIfc = new XmlElementIfc(header, ifcProjectLibrary);
-						XmlSerializer format = new XmlSerializer(typeof(IfcProjectLibrary))
+						IfcProjectLibrary ifcProjectLibrary = Compiler.generatePropertyLibrary(docProject, included);
+						using (FormatIFCXML ifcxml = new FormatIFCXML(ifcProjectLibrary, docProject, null, views, new FileStream(filepath, FileMode.Create)))
 						{
-							NameSpace = XmlElementIfc.NameSpace,
-							SchemaLocation = XmlElementIfc.SchemaLocation
-						};
-						format.WriteObject(stream, xmlElementIfc);
+							ifcxml.Save();
+						}
 					}
 					break;
 
