@@ -1587,7 +1587,14 @@ namespace IfcDoc.Schema
 				ExportIfcDefinition(ifcProp, docProp);
 
 				ifcProp.TemplateType = (IfcSimplePropertyTemplateTypeEnum)Enum.Parse(typeof(IfcSimplePropertyTemplateTypeEnum), docProp.PropertyType.ToString());
-				ifcProp.PrimaryMeasureType = new IfcLabel(docProp.PrimaryDataType);
+				if (!string.IsNullOrEmpty(docProp.PrimaryDataType))
+				{
+					ifcProp.PrimaryMeasureType = new IfcLabel(docProp.PrimaryDataType);
+				}
+				else
+				{
+					ifcProp.PrimaryMeasureType = new IfcLabel("IfcLabel");
+				}
 				if (!string.IsNullOrEmpty(docProp.SecondaryDataType))
 					ifcProp.SecondaryMeasureType = new IfcLabel(docProp.SecondaryDataType);
 
