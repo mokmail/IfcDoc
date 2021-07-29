@@ -739,9 +739,10 @@ namespace IfcDoc.Schema.DOC
 		/// <returns></returns>
 		public string GetSchemaVersion()
 		{
-			if (this.Sections.Count > 0 && !String.IsNullOrEmpty(this.Sections[0].Version))
+			var schemaVersion = this.Sections.Single(s => s.Name == "Scope").Version;
+			if (this.Sections.Count > 0 && !String.IsNullOrEmpty(schemaVersion))
 			{
-				return this.Sections[0].Version;
+				return schemaVersion;
 			}
 
 			return null;

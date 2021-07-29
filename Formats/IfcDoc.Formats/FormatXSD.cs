@@ -79,7 +79,8 @@ namespace IfcDoc.Format.XSD
 
 		private static void WriteResource(System.IO.StreamWriter writer, string resourcename)
 		{
-			using (System.IO.Stream stm = System.Reflection.Assembly.GetEntryAssembly().GetManifestResourceStream(resourcename))
+			var assembly = System.Reflection.Assembly.GetEntryAssembly();
+			using (System.IO.Stream stm = assembly.GetManifestResourceStream(assembly.GetName().Name + "." + resourcename))
 			{
 				using (System.IO.StreamReader reader = new System.IO.StreamReader(stm))
 				{
@@ -1248,7 +1249,7 @@ namespace IfcDoc.Format.XSD
 					"targetNamespace=\"" + xmlns + "\" " +
 					"elementFormDefault=\"qualified\" attributeFormDefault=\"unqualified\" >");
 
-				WriteResource(writer, "IfcDoc.xsd1.txt");
+				WriteResource(writer, "xsd1.txt");
 
 				// Entities
 				writer.WriteLine("\t<!-- element and complex type declarations (for ENTITY definitions) -->");
@@ -1278,7 +1279,7 @@ namespace IfcDoc.Format.XSD
 					writer.Write(FormatDefined(docDefined, map, this.m_included));
 				}
 
-				WriteResource(writer, "IfcDoc.xsd2.txt");
+				WriteResource(writer, "xsd2.txt");
 
 				// sort selects alphabetically
 				Queue<DocSelectItem> queue = new Queue<DocSelectItem>();
