@@ -1884,7 +1884,7 @@ namespace IfcDoc.Format.HTM
 			else
 			{
 				string relativePath = "../../../";
-				if (current is DocPropertyEnumeration)
+				if (current is DocPropertyEnumeration || current is DocConstant)
 					relativePath = "../";
 				else if (current is DocSchema)
 					relativePath = "../../";
@@ -1903,6 +1903,10 @@ namespace IfcDoc.Format.HTM
 							imgold = imgold.Substring(imgold.LastIndexOf('/') + 1);
 							string source = inputPath + "\\" + imgold;
 							string target = htmlPath + "\\figures\\" + imgold;
+							if (imgold == "ifcspatialstructureelement-spatialstructure.png")
+							{
+								bool stop = true;
+							}
 							if (current is DocExample)
 							{
 								source = inputPath + "\\examples\\" + imgold;

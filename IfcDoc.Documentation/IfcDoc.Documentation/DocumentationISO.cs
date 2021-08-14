@@ -5589,10 +5589,8 @@ namespace IfcDoc.Documentation
 														htmDef.WriteDocumentationMarkup(documentation, type, docPublication, path, InputPathGeneral);
 														htmDef.WriteSummaryFooter(docPublication);
 
-														if (type is DocEnumeration)
+														if (type is DocEnumeration docEnumeration)
 														{
-															DocEnumeration docEnumeration = (DocEnumeration)type;
-
 															htmDef.WriteSummaryHeader("Enumeration definition", true, docPublication);
 															htmDef.WriteLine("<table class=\"attributes\">");
 															htmDef.WriteLine("<tr><th>Constant</th><th>Description</th></tr>");
@@ -5601,9 +5599,11 @@ namespace IfcDoc.Documentation
 																htmDef.Write("<tr><td>");
 																htmDef.Write(docConstant.Name);
 																htmDef.Write("</td><td>");
-																string constantDocumentation = DocumentationHtmlNoParagraphs(docConstant.Documentation);
+																htmDef.WriteDocumentationMarkup(UpdateNumbering(DocumentationHtml(docConstant.Documentation), listFigures, listTables, type), docEnumeration, docPublication, path, InputPathGeneral);
+																
+																/*string constantDocumentation = DocumentationHtmlNoParagraphs(docConstant.Documentation);
 																constantDocumentation = Regex.Replace(constantDocumentation, "../(../)+figures", "../../../figures");
-																htmDef.Write(constantDocumentation);
+																htmDef.Write(constantDocumentation);*/
 																htmDef.Write("</td></tr>");
 															}
 															htmDef.WriteLine("</table>");
