@@ -2554,6 +2554,13 @@ namespace IfcDoc.Schema.DOC
 					mapEntity.Add(def.Name, def);
 				}
 			}
+			foreach (DocConstant constant in Constants)
+			{
+				if (!mapEntity.ContainsKey(constant.Name))
+				{
+					mapEntity.Add(constant.Name, constant);
+				}
+			}
 			foreach (DocSection docSection in Sections)
 			{
 				foreach (DocSchema docSchema in docSection.Schemas)
