@@ -5,7 +5,6 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Windows.Forms;
 
 using HtmlAgilityPack;
 
@@ -16,7 +15,7 @@ using BuildingSmart.Serialization.Step;
 using BuildingSmart.Serialization.Xml;
 
 
-namespace IfcDoc
+namespace IfcDoc.Utils
 {
 	public static class IfcDocUtils
 	{
@@ -132,7 +131,7 @@ namespace IfcDoc
 			List<object> instances = new List<object>();
 			return LoadFile(filePath, out instances);
 		}
-		internal static void ReviseImport(List<object> instances, double schemaVersion)
+		public static void ReviseImport(List<object> instances, double schemaVersion)
 		{
 			foreach (object o in instances)
 			{
@@ -279,7 +278,8 @@ namespace IfcDoc
 					}
 					break;
 				default:
-					MessageBox.Show("Unsupported file type " + ext, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					//MessageBox.Show("Unsupported file type " + ext, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+					throw new NotImplementedException("Unsupported file type " + ext);
 					break;
 #if MDB
                     case ".mdb":

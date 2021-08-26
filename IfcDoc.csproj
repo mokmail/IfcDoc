@@ -224,7 +224,6 @@
     <Compile Include="FormValidateMappings.Designer.cs">
       <DependentUpon>FormValidateMappings.cs</DependentUpon>
     </Compile>
-    <Compile Include="IfcDocUtils.cs" />
     <Compile Include="System\ComponentModel\CustomComponentResourceManager.cs" />
     <Compile Include="ThemedTreeView.cs">
       <SubType>Component</SubType>
@@ -568,6 +567,10 @@
       <Project>{71c466a9-3c25-4a0f-a7a9-81ddf1c3f838}</Project>
       <Name>IfcDoc.Schemas</Name>
     </ProjectReference>
+    <ProjectReference Include="IfcDoc.Utils\IfcDoc.Utils\IfcDoc.Utils.csproj">
+      <Project>{b534b3b5-b4a5-47ce-88d0-97c11eca8cf8}</Project>
+      <Name>IfcDoc.Utils</Name>
+    </ProjectReference>
     <ProjectReference Include="IfcKit\formats\BuildingSmart.Serialization\BuildingSmart.Serialization.csproj">
       <Project>{36a0328b-1a60-4f07-bc34-4d22a7f65cac}</Project>
       <Name>BuildingSmart.Serialization</Name>
@@ -618,6 +621,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="Resources\toolStripMenuItemInsertQuantity.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
