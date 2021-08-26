@@ -16,6 +16,7 @@ using HtmlAgilityPack;
 using IfcDoc.Formats;
 using IfcDoc.Schema.DOC;
 using IfcDoc.Schema;
+using System.Diagnostics;
 
 namespace IfcDoc.Format.HTM
 {
@@ -3540,7 +3541,10 @@ namespace IfcDoc.Format.HTM
 
 		}
 		private static HtmlNode MarkdownToHtml(string markdown, bool removeParagraphs, Markdig.MarkdownPipeline pipeline)
-		{ 
+		{
+			// just replacing the greater than in order to render markdown properly
+			markdown = markdown.Replace("&gt;", ">");
+
 			string html = Markdig.Markdown.ToHtml(markdown, pipeline);
 			HtmlDocument document = new HtmlDocument();
 			document.LoadHtml(html);

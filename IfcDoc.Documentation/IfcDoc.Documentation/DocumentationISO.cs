@@ -5599,11 +5599,9 @@ namespace IfcDoc.Documentation
 																htmDef.Write("<tr><td>");
 																htmDef.Write(docConstant.Name);
 																htmDef.Write("</td><td>");
+
 																htmDef.WriteDocumentationMarkup(UpdateNumbering(DocumentationHtml(docConstant.Documentation), listFigures, listTables, type), docEnumeration, docPublication, path, InputPathGeneral);
 																
-																/*string constantDocumentation = DocumentationHtmlNoParagraphs(docConstant.Documentation);
-																constantDocumentation = Regex.Replace(constantDocumentation, "../(../)+figures", "../../../figures");
-																htmDef.Write(constantDocumentation);*/
 																htmDef.Write("</td></tr>");
 															}
 															htmDef.WriteLine("</table>");
