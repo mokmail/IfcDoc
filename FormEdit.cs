@@ -37,6 +37,7 @@ using BuildingSmart.Serialization.Step;
 using BuildingSmart.Serialization.Turtle;
 using BuildingSmart.Serialization.Xml;
 using IfcDoc.Documentation;
+using IfcDoc.Utils;
 
 #if MDB
     using IfcDoc.Format.MDB;
