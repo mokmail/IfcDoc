@@ -138,6 +138,10 @@ namespace BuildingSmart.Serialization.Xml
 		}
 		private void writeObjectFolder(string filePath, object obj, HashSet<string> overwrittenDirectories)
 		{
+			if (filePath.Contains("Gradient Curve"))
+			{
+				bool s = true;
+			}
 			_ObjectStore.UnMarkSerialized(obj);
 			Type objectType = obj.GetType(), stringType = typeof(String);
 
@@ -145,6 +149,7 @@ namespace BuildingSmart.Serialization.Xml
 			HashSet<string> nestedProperties = new HashSet<string>();
 
 			List<Tuple<string, object, bool>> queued = new List<Tuple<string, object, bool>>();
+			List<object> unserializedReferences = new List<object>();
 			IList<KeyValuePair<string, PropertyInfo>> fields = this.GetFieldsOrdered(objectType);
 			foreach (KeyValuePair<string, PropertyInfo> pair in fields)
 			{
@@ -259,6 +264,11 @@ namespace BuildingSmart.Serialization.Xml
 					{
 						nestedProperties.Add(propertyInfo.Name);
 					}
+					else if (objectType.Name == "DocTemplateDefinition" && propertyInfo.Name == "Rules" && propertyObject is IList rules)
+					{
+						QueueTemplateReferences(rules, unserializedReferences, folderPath);
+						unserializedReferences.Reverse();
+					}
 					else
 					{
 						DataType dataType = DataType.Custom;
@@ -295,6 +305,10 @@ namespace BuildingSmart.Serialization.Xml
 							if (!string.IsNullOrEmpty(txt))
 							{
 								nestedProperties.Add(propertyInfo.Name);
+								if (!Directory.Exists(folderPath))
+								{
+									Directory.CreateDirectory(folderPath);
+								}
 								string txtPath = Path.Combine(folderPath, propertyInfo.Name + fileExtension);
 								File.WriteAllText(txtPath, txt.TrimEnd() + Environment.NewLine, new UTF8Encoding(false));
 								continue;
@@ -306,24 +320,101 @@ namespace BuildingSmart.Serialization.Xml
 			if (nestedProperties.Count < fields.Count)
 			{
 				_ObjectStore.UnMarkSerialized(obj);
+				if (!Directory.Exists(folderPath))
+				{
+					Directory.CreateDirectory(folderPath);
+				}
 				using (FileStream fileStream = new FileStream(filePath, FileMode.Create, FileAccess.Write))
 				{
 					writeObject(fileStream, obj, nestedProperties);
 				}
 			}
-			foreach (Tuple<string, object,bool> o in queued)
+			if (queued.Count > 0)
 			{
-				if(o.Item3)
+				// order queued
+				foreach (object o in unserializedReferences)
 				{
-					_ObjectStore.UnMarkSerialized(o.Item2);
-					using (FileStream fileStream = new FileStream(o.Item1, FileMode.Create, FileAccess.Write))
+
+				}
+				foreach (Tuple<string, object,bool> o in queued)
+				{
+					if(o.Item3)
 					{
-						writeObject(fileStream, o.Item2, new HashSet<string>());
+						_ObjectStore.UnMarkSerialized(o.Item2);
+						using (FileStream fileStream = new FileStream(o.Item1, FileMode.Create, FileAccess.Write))
+						{
+							writeObject(fileStream, o.Item2, new HashSet<string>());
+						}
+					}
+					else
+						writeObjectFolder(o.Item1, o.Item2, overwrittenDirectories);
+				}
+			}
+
+		}
+
+		private bool QueueTemplateReferences(IList rules, List<object> unserializedReferences, string folderPath)
+		{
+			if (rules.Count > 0)
+			{
+				foreach (var rule in rules)
+				{
+					return HasReference(rule, unserializedReferences, folderPath);
+				}
+			}
+			return false;
+		}
+
+		private bool HasReference(object rule, List<object> unserializedReferences, string folderPath)
+		{
+			var ruleType = rule.GetType();
+			IList<KeyValuePair<string, PropertyInfo>> fields = this.GetFieldsOrdered(ruleType);
+
+			if (fields.Where(kv => kv.Key == "Rules").First().Value.GetValue(rule) is IList rules)
+			{
+				if (ruleType.Name == "DocModelRuleAttribute")
+				{
+					return QueueTemplateReferences(rules, unserializedReferences, folderPath);
+				}
+				else if (ruleType.Name == "DocModelRuleEntity")
+				{
+					var referencesProperty = fields.Where(kv => kv.Key == "References").First().Value;
+					var referencesPropertyValue = referencesProperty.GetValue(rule);
+
+					if (referencesPropertyValue is IList referencesPropertyValueList)
+					{
+						if (referencesPropertyValueList.Count > 0)
+						{
+							Type genericType = referencesProperty.PropertyType.GetGenericArguments()[0];
+							PropertyInfo uniqueIdProperty = genericType.GetProperty("id", typeof(string));
+
+							foreach (var reference in referencesPropertyValueList)
+							{
+								IList<KeyValuePair<string, PropertyInfo>> referenceFields = this.GetFieldsOrdered(reference.GetType());
+
+								referenceFields.Where(kv => kv.Key == "Name").First().Value.GetValue(reference);
+
+								/*string referencePath = Path.Combine(folderPath,
+									removeInvalidFile(referenceFields.Where(kv => kv.Key == "Name").First().Value.GetValue(reference).ToString()),
+									reference.GetType().Name + ".xml");
+								queueOrder.Add(new Tuple<string, object, bool>(referencePath, reference, false));*/
+								if (!_ObjectStore.isSerialized(reference))
+								{
+									unserializedReferences.Add(reference);
+								}
+							}
+							return true;
+						}
+
+						if (rules.Count > 0)
+						{
+							return QueueTemplateReferences(rules, unserializedReferences, folderPath);
+						}
 					}
 				}
-				else
-					writeObjectFolder(o.Item1, o.Item2, overwrittenDirectories);
 			}
+
+			return false;
 		}
 
 		public object ReadObject(string folderPath)
