@@ -47,6 +47,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\BuildingSmart.Serialization.Attributes\BuildingSmart.Serialization.Attributes.csproj">
+      <Project>{45aad6ce-a573-41e3-8cc2-45f010c7c3c6}</Project>
+      <Name>BuildingSmart.Serialization.Attributes</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BuildingSmart.Serialization\BuildingSmart.Serialization.csproj">
       <Project>{36a0328b-1a60-4f07-bc34-4d22a7f65cac}</Project>
       <Name>BuildingSmart.Serialization</Name>

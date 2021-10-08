@@ -18,6 +18,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using System.Xml;
+using BuildingSmart.Serialization.Attributes;
 
 namespace BuildingSmart.Serialization.Xml
 {
@@ -1238,6 +1239,7 @@ namespace BuildingSmart.Serialization.Xml
 				}
 			}
 
+			List<object> forcedReferenceObjects = new List<object>();
 			bool open = false;
 			if (elementFields.Count > 0)
 			{
@@ -1245,13 +1247,41 @@ namespace BuildingSmart.Serialization.Xml
 				foreach (Tuple<KeyValuePair<string, PropertyInfo>, DataMemberAttribute, object> tuple in elementFields) // derived attributes are null
 				{
 					PropertyInfo f = tuple.Item1.Value;
+					SerializationControl control = SerializationControl.Default;
+					SerializationPropertyAttribute serializableAttribute = f.GetCustomAttribute<SerializationPropertyAttribute>();
+					if (serializableAttribute != null)
+						control = serializableAttribute.Control;
+					
+					object value = tuple.Item3;
+					if(control == SerializationControl.ForceReference)
+					{
+						IEnumerable ienumerable = value as IEnumerable;
+						if (ienumerable != null)
+						{
+							foreach (object nested in ienumerable)
+							{
+								if (!_ObjectStore.isSerialized(nested))
+								{
+									_ObjectStore.MarkSerialized(nested);
+									forcedReferenceObjects.Add(nested);
+								}
+							}
+						}
+						else
+						{
+							if (!_ObjectStore.isSerialized(value))
+							{
+								_ObjectStore.MarkSerialized(value);
+								forcedReferenceObjects.Add(value);
+							}
+						}
+					}
 					Type ft = f.PropertyType;
 					bool isvaluelist = IsValueCollection(ft);
 					bool isvaluelistlist = ft.IsGenericType && // e.g. IfcTriangulatedFaceSet.Normals
 						typeof(IEnumerable).IsAssignableFrom(ft.GetGenericTypeDefinition()) &&
 						IsValueCollection(ft.GetGenericArguments()[0]);
 					DataMemberAttribute dataMemberAttribute = tuple.Item2;
-					object value = tuple.Item3;
 					string elementName = f.Name;
 					DocXsdFormatEnum? format = GetXsdFormat(f, ref elementName);
 					if (format == DocXsdFormatEnum.Element)
@@ -1413,6 +1443,7 @@ namespace BuildingSmart.Serialization.Xml
 					}
 				}
 			}
+
 			IEnumerable enumerable = o as IEnumerable;
 			if(enumerable != null)
 			{
@@ -1438,6 +1469,9 @@ namespace BuildingSmart.Serialization.Xml
 					writer.WriteLine(obj.ToString().TrimEnd());
 				}
 			}
+			foreach (object forcedReference in forcedReferenceObjects)
+				_ObjectStore.UnMarkSerialized(forcedReference);
+
 			if (!open)
 			{
 				this.WriteAttributeTerminator(writer);
