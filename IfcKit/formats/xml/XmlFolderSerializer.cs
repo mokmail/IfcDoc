@@ -199,7 +199,6 @@ namespace BuildingSmart.Serialization.Xml
 							if (folderNameProperty == null)
 								folderNameProperty = uniqueIdProperty;
 
-							PropertyInfo nameProp = objectType.GetProperty("Name", typeof(string));
 							if (uniqueIdProperty != null)
 							{
 								IEnumerable enumerable = propertyInfo.GetValue(obj) as IEnumerable;

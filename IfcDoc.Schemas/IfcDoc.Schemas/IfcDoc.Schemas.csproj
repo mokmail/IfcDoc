@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\BuildingSmart.Serialization.Attributes\BuildingSmart.Serialization.Attributes.csproj" />
+    <ProjectReference Include="..\..\IfcKit\formats\BuildingSmart.Serialization.Attributes\BuildingSmart.Serialization.Attributes.csproj" />
     <ProjectReference Include="..\..\IfcKit\schemas\BuildingSmart.IFC.csproj" />
     <ProjectReference Include="..\..\IfcKit\utilities\BuildingSmart.Utilities.Conversion\BuildingSmart.Utilities.Conversion.csproj" />
   </ItemGroup>

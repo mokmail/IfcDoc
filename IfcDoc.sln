@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildingSmart.Serialization
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildingSmart.Serialization", "IfcKit\formats\BuildingSmart.Serialization\BuildingSmart.Serialization.csproj", "{36A0328B-1A60-4F07-BC34-4D22A7F65CAC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildingSmart.Serialization.Attributes", "IfcKit\formats\BuildingSmart.Serialization.Attributes\BuildingSmart.Serialization.Attributes.csproj", "{45AAD6CE-A573-41E3-8CC2-45F010C7C3C6}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildingSmart.Utilities.Conversion", "IfcKit\utilities\BuildingSmart.Utilities.Conversion\BuildingSmart.Utilities.Conversion.csproj", "{048106C1-7D68-4B3C-B7B1-EB437F2C15B0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildingSmart.Utilities.Validation", "IfcKit\utilities\BuildingSmart.Utilities.Validation\BuildingSmart.Utilities.Validation.csproj", "{B0BAF044-8F12-4C67-B485-A6B98333AAA1}"
@@ -32,8 +34,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IfcDoc.Documentation", "IfcDoc.Documentation\IfcDoc.Documentation\IfcDoc.Documentation.csproj", "{5CA899D3-3EC9-4AAE-BF76-DFEE2489D651}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IfcDoc.Utils", "IfcDoc.Utils\IfcDoc.Utils\IfcDoc.Utils.csproj", "{B534B3B5-B4A5-47CE-88D0-97C11ECA8CF8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildingSmart.Serialization.Attributes", "..\BuildingSmart.Serialization.Attributes\BuildingSmart.Serialization.Attributes.csproj", "{45AAD6CE-A573-41E3-8CC2-45F010C7C3C6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
