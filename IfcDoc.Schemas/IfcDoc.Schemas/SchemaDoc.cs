@@ -22,6 +22,7 @@ using System.Xml.Serialization;
 
 using System.Text.RegularExpressions;
 using BuildingSmart.Utilities.Conversion;
+using BuildingSmart.Serialization.Attributes;
 
 namespace IfcDoc.Schema.DOC
 {
@@ -2225,6 +2226,12 @@ namespace IfcDoc.Schema.DOC
 			SortAnnexes();
 			DocObject.ComparerDocObject comparer = new DocObject.ComparerDocObject();
 			Templates.Sort(comparer);
+			var partialTemplates = Templates.Where(x => string.Compare(x.Name, "Partial Templates", true) == 0).FirstOrDefault();
+			if(partialTemplates != null)
+			{
+				Templates.Remove(partialTemplates);
+				Templates.Insert(0, partialTemplates);
+			}
 			foreach(DocTemplateDefinition template in Templates)
 			{
 				template.SortTemplate();
@@ -2655,7 +2662,8 @@ namespace IfcDoc.Schema.DOC
 		[DataMember(Order = 7), Obsolete] private string _FieldType3 { get; set; } // type of custom field #3, e.g. "IfcDistributionSystemTypeEnum"
 		[DataMember(Order = 8), Obsolete] private string _FieldType4 { get; set; } // type of custom field #4, e.g. "IfcFlowDirectionEnum"        
 		[DataMember(Order = 9)] [XmlArray] public List<DocModelRule> Rules { get; protected set; } //NEW IN 2.5
-		[DataMember(Order = 10)] [XmlArray] [XmlArrayItem(NestingLevel = 1)] public List<DocTemplateDefinition> Templates { get; protected set; } // NEW IN 2.7 sub-templates
+		[DataMember(Order = 10)] [XmlArray] [XmlArrayItem(NestingLevel = 1)] [SerializationProperty(Control =SerializationControl.Priority)]
+		public List<DocTemplateDefinition> Templates { get; protected set; } // NEW IN 2.7 sub-templates
 		[DataMember(Order = 11)] [XmlAttribute] public bool IsDisabled { get; set; }
 
 		private bool? _validation; // unserialized; null: no applicable instances; false: one or more failures; true: all pass
@@ -3775,7 +3783,7 @@ namespace IfcDoc.Schema.DOC
 
 	public class DocModelRuleEntity : DocModelRule
 	{
-		[DataMember(Order = 0)] [XmlArray] public List<DocTemplateDefinition> References { get; protected set; } // IfcDoc 6.3: references to chained templates
+		[DataMember(Order = 0)] [XmlArray] [SerializationProperty(Control = SerializationControl.ForceReference)] public List<DocTemplateDefinition> References { get; protected set; } // IfcDoc 6.3: references to chained templates
 		[DataMember(Order = 1)] [XmlAttribute] public string Prefix { get; set; }
 		[DataMember(Order = 2)] [XmlAttribute] public string UniqueId { get; set; } // V12.2 inserted
 

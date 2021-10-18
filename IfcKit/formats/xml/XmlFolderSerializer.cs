@@ -19,6 +19,8 @@ using System.Threading.Tasks;
 using System.Xml.Serialization;
 using System.Xml;
 
+using BuildingSmart.Serialization.Attributes;
+
 namespace BuildingSmart.Serialization.Xml
 {
 	public class XmlFolderSerializer : XmlSerializer
@@ -146,6 +148,7 @@ namespace BuildingSmart.Serialization.Xml
 
 			List<Tuple<string, object, bool>> queued = new List<Tuple<string, object, bool>>();
 			IList<KeyValuePair<string, PropertyInfo>> fields = this.GetFieldsOrdered(objectType);
+			List<object> forcedReferenceObjects = new List<object>();
 			foreach (KeyValuePair<string, PropertyInfo> pair in fields)
 			{
 				PropertyInfo propertyInfo = pair.Value;
@@ -154,150 +157,181 @@ namespace BuildingSmart.Serialization.Xml
 				Type propertyType = propertyInfo.PropertyType;
 				XmlArrayAttribute xmlArrayAttribute = propertyInfo.GetCustomAttribute<XmlArrayAttribute>();
 				XmlArrayItemAttribute xmlArrayItemAttribute = propertyInfo.GetCustomAttribute<XmlArrayItemAttribute>();
+				SerializationControl control = SerializationControl.Default;
+				SerializationPropertyAttribute serializableAttribute = propertyInfo.GetCustomAttribute<SerializationPropertyAttribute>();
+				if (serializableAttribute != null)
+					control = serializableAttribute.Control;
 
-				if (xmlArrayAttribute != null && xmlArrayItemAttribute != null)
+				if (control == SerializationControl.ForceReference)
 				{
-					bool isLeaf = xmlArrayItemAttribute != null && string.Compare(xmlArrayItemAttribute.DataType, "_leaf_", true) == 0;
-					if (string.IsNullOrEmpty(xmlArrayItemAttribute.ElementName) && xmlArrayItemAttribute.NestingLevel > 0 && propertyType.IsGenericType && typeof(IEnumerable).IsAssignableFrom(propertyType.GetGenericTypeDefinition()))
+					object val = propertyInfo.GetValue(obj);
+					IEnumerable enumerable = val as IEnumerable;
+					if (enumerable != null)
 					{
-						Type genericType = propertyType.GetGenericArguments()[0];
-						PropertyInfo uniqueIdProperty = genericType.GetProperty("id", typeof(string));
-						PropertyInfo folderNameProperty = genericType.GetProperty("_folderName", typeof(string));
-						if (folderNameProperty == null)
-							folderNameProperty = uniqueIdProperty;
-						
-						PropertyInfo nameProp = objectType.GetProperty("Name", typeof(string));
-						if (uniqueIdProperty != null)
+						foreach (object nested in enumerable)
 						{
-							IEnumerable enumerable = propertyInfo.GetValue(obj) as IEnumerable;
-							if (enumerable != null)
+							if(!_ObjectStore.isSerialized(nested))
 							{
-								bool allSaved = true, nestingValid = true; ;
-								int count = 0;
-								foreach (object nested in enumerable)
-								{
-									if (nested == null)
-										continue;
-									count++;
-									if (!_ObjectStore.isSerialized(nested))
-										allSaved = false;
-									object objId = uniqueIdProperty.GetValue(nested);
-									if (objId == null || string.IsNullOrEmpty(objId.ToString()))
-									{
-										nestingValid = false;
-										break;
-									}
-								}
-								if (nestingValid && !allSaved)
-								{
-									string nestedPath;
-									if (propertyInfo.Name == "Templates" && objectType.Name != "DocProject")
-									{
-										nestedPath = folderPath;
-									}
-									else
-									{
-										nestedPath = Path.Combine(folderPath, removeInvalidFile(propertyInfo.Name));
-									}
-									overwrittenDirectories.Add(nestedPath);
-									Directory.CreateDirectory(nestedPath);
-									nestedProperties.Add(propertyInfo.Name);
-									if (xmlArrayItemAttribute.NestingLevel > 1)
-									{
-										string prefix = m_NominatedTypeFilePrefix.Count > 0 ? hasFilePrefix(genericType) : "";
-										IEnumerable<IGrouping<char, object>> groups = null;
-										if (string.IsNullOrEmpty(prefix))
-											groups = enumerable.Cast<object>().GroupBy(x => char.ToLower(uniqueIdProperty.GetValue(x).ToString()[0]));
-										else
-										{
-											int prefixLength = prefix.Length;
-											groups = enumerable.Cast<object>().GroupBy(x => char.ToLower(initialChar(uniqueIdProperty.GetValue(x).ToString(), prefix, prefixLength)));
-										}
-										foreach (IGrouping<char, object> group in groups)
-										{
-											string alphaPath = Path.Combine(nestedPath, group.Key.ToString());
-											overwrittenDirectories.Add(alphaPath);
-											Directory.CreateDirectory(alphaPath);
-											foreach (object nested in group)
-											{
-												_ObjectStore.MarkSerialized(nested);
-												string nestedObjectPath = isLeaf ? alphaPath : Path.Combine(alphaPath, removeInvalidFile(folderNameProperty.GetValue(nested).ToString()));
-												overwrittenDirectories.Add(nestedObjectPath);
-												Directory.CreateDirectory(nestedObjectPath);
-												string fileName = removeInvalidFile((isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : nested.GetType().Name) + ".xml");
-												queued.Add(new Tuple<string, object, bool>(Path.Combine(nestedObjectPath, fileName), nested, isLeaf));
-											}
-										}
-										continue;
-									}
-									foreach (object nested in enumerable)
-									{
-										if (nested == null)
-											continue;
-										_ObjectStore.MarkSerialized(nested);
-
-										string folderName = removeInvalidFile(isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : folderNameProperty.GetValue(nested).ToString());
-										string nestedObjectPath = isLeaf ? nestedPath : Path.Combine(nestedPath, folderName);
-										overwrittenDirectories.Add(nestedObjectPath);
-										Directory.CreateDirectory(nestedObjectPath);
-										string fileName = removeInvalidFile((isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : nested.GetType().Name) + ".xml");
-										Tuple<string, object, bool> tuple = new Tuple<string, object, bool>(Path.Combine(nestedObjectPath, fileName), nested, isLeaf);
-										if (nestedObjectPath.Contains("Partial Templates") && !nestedObjectPath.EndsWith("Geometry"))
-											queued.Insert(0, tuple);
-										else
-											queued.Add(tuple);
-									}
-								}
+								_ObjectStore.MarkSerialized(nested);
+								forcedReferenceObjects.Add(nested);
 							}
+						}
+					}
+					else
+					{
+						if(!_ObjectStore.isSerialized(val))
+						{
+							_ObjectStore.MarkSerialized(val);
+							forcedReferenceObjects.Add(val);
 						}
 					}
 				}
 				else
 				{
-					object propertyObject = propertyInfo.GetValue(obj);
-					if (propertyObject == null)
+					if (xmlArrayAttribute != null && xmlArrayItemAttribute != null)
 					{
-						nestedProperties.Add(propertyInfo.Name);
+						bool isLeaf = xmlArrayItemAttribute != null && string.Compare(xmlArrayItemAttribute.DataType, "_leaf_", true) == 0;
+						if (string.IsNullOrEmpty(xmlArrayItemAttribute.ElementName) && xmlArrayItemAttribute.NestingLevel > 0 && propertyType.IsGenericType && typeof(IEnumerable).IsAssignableFrom(propertyType.GetGenericTypeDefinition()))
+						{
+							Type genericType = propertyType.GetGenericArguments()[0];
+							PropertyInfo uniqueIdProperty = genericType.GetProperty("id", typeof(string));
+							PropertyInfo folderNameProperty = genericType.GetProperty("_folderName", typeof(string));
+							if (folderNameProperty == null)
+								folderNameProperty = uniqueIdProperty;
+
+							if (uniqueIdProperty != null)
+							{
+								IEnumerable enumerable = propertyInfo.GetValue(obj) as IEnumerable;
+								if (enumerable != null)
+								{
+									bool allSaved = true, nestingValid = true; ;
+									int count = 0;
+									foreach (object nested in enumerable)
+									{
+										if (nested == null)
+											continue;
+										count++;
+										if (!_ObjectStore.isSerialized(nested))
+											allSaved = false;
+										object objId = uniqueIdProperty.GetValue(nested);
+										if (objId == null || string.IsNullOrEmpty(objId.ToString()))
+										{
+											nestingValid = false;
+											break;
+										}
+									}
+									if (nestingValid && !allSaved)
+									{
+										string nestedPath;
+										if (propertyInfo.Name == "Templates" && objectType.Name != "DocProject")
+										{
+											nestedPath = folderPath;
+										}
+										else
+										{
+											nestedPath = Path.Combine(folderPath, removeInvalidFile(propertyInfo.Name));
+										}
+										overwrittenDirectories.Add(nestedPath);
+										Directory.CreateDirectory(nestedPath);
+										nestedProperties.Add(propertyInfo.Name);
+										if (xmlArrayItemAttribute.NestingLevel > 1)
+										{
+											string prefix = m_NominatedTypeFilePrefix.Count > 0 ? hasFilePrefix(genericType) : "";
+											IEnumerable<IGrouping<char, object>> groups = null;
+											if (string.IsNullOrEmpty(prefix))
+												groups = enumerable.Cast<object>().GroupBy(x => char.ToLower(uniqueIdProperty.GetValue(x).ToString()[0]));
+											else
+											{
+												int prefixLength = prefix.Length;
+												groups = enumerable.Cast<object>().GroupBy(x => char.ToLower(initialChar(uniqueIdProperty.GetValue(x).ToString(), prefix, prefixLength)));
+											}
+											foreach (IGrouping<char, object> group in groups)
+											{
+												string alphaPath = Path.Combine(nestedPath, group.Key.ToString());
+												overwrittenDirectories.Add(alphaPath);
+												Directory.CreateDirectory(alphaPath);
+												foreach (object nested in group)
+												{
+													_ObjectStore.MarkSerialized(nested);
+													string nestedObjectPath = isLeaf ? alphaPath : Path.Combine(alphaPath, removeInvalidFile(folderNameProperty.GetValue(nested).ToString()));
+													overwrittenDirectories.Add(nestedObjectPath);
+													Directory.CreateDirectory(nestedObjectPath);
+													string fileName = removeInvalidFile((isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : nested.GetType().Name) + ".xml");
+													queued.Add(new Tuple<string, object, bool>(Path.Combine(nestedObjectPath, fileName), nested, isLeaf));
+												}
+											}
+											continue;
+										}
+										foreach (object nested in enumerable)
+										{
+											if (nested == null)
+												continue;
+											_ObjectStore.MarkSerialized(nested);
+
+											string folderName = removeInvalidFile(isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : folderNameProperty.GetValue(nested).ToString());
+											string nestedObjectPath = isLeaf ? nestedPath : Path.Combine(nestedPath, folderName);
+											overwrittenDirectories.Add(nestedObjectPath);
+											Directory.CreateDirectory(nestedObjectPath);
+											string fileName = removeInvalidFile((isLeaf ? uniqueIdProperty.GetValue(nested).ToString() : nested.GetType().Name) + ".xml");
+											Tuple<string, object, bool> tuple = new Tuple<string, object, bool>(Path.Combine(nestedObjectPath, fileName), nested, isLeaf);
+											if (control == SerializationControl.Priority)
+												queued.Insert(0, tuple);
+											else
+												queued.Add(tuple);
+										}
+									}
+								}
+							}
+
+						}
 					}
 					else
 					{
-						DataType dataType = DataType.Custom;
-						string fileExtension = ".txt", txt = "";
-						foreach (DataTypeAttribute dataTypeAttribute in propertyInfo.GetCustomAttributes<DataTypeAttribute>())
+						object propertyObject = propertyInfo.GetValue(obj);
+						if (propertyObject == null)
 						{
-							FileExtensionsAttribute fileExtensionsAttribute = dataTypeAttribute as FileExtensionsAttribute;
-							if (fileExtensionsAttribute != null && !string.IsNullOrEmpty(fileExtensionsAttribute.Extensions))
-								fileExtension = fileExtensionsAttribute.Extensions;
-							if (dataTypeAttribute.DataType != DataType.Custom)
-								dataType = dataTypeAttribute.DataType;
+							nestedProperties.Add(propertyInfo.Name);
 						}
-						if (dataType == DataType.Html)
+						else
 						{
-							string html = propertyObject.ToString();
-							if (!string.IsNullOrEmpty(html))
+							DataType dataType = DataType.Custom;
+							string fileExtension = ".txt", txt = "";
+							foreach (DataTypeAttribute dataTypeAttribute in propertyInfo.GetCustomAttributes<DataTypeAttribute>())
 							{
-								nestedProperties.Add(propertyInfo.Name);
-								string htmlPath = Path.Combine(folderPath, propertyInfo.Name + ".html");
-								File.WriteAllText(htmlPath, html.TrimEnd() + Environment.NewLine, new UTF8Encoding(false));
-								continue;
+								FileExtensionsAttribute fileExtensionsAttribute = dataTypeAttribute as FileExtensionsAttribute;
+								if (fileExtensionsAttribute != null && !string.IsNullOrEmpty(fileExtensionsAttribute.Extensions))
+									fileExtension = fileExtensionsAttribute.Extensions;
+								if (dataTypeAttribute.DataType != DataType.Custom)
+									dataType = dataTypeAttribute.DataType;
 							}
-						}
-						else if (dataType == DataType.MultilineText)
-						{
-							byte[] byteArray = propertyObject as byte[];
-							if (byteArray != null)
+							if (dataType == DataType.Html)
 							{
-								nestedProperties.Add(propertyInfo.Name);
-								txt = Encoding.ASCII.GetString(byteArray);
+								string html = propertyObject.ToString();
+								if (!string.IsNullOrEmpty(html))
+								{
+									nestedProperties.Add(propertyInfo.Name);
+									string htmlPath = Path.Combine(folderPath, propertyInfo.Name + ".html");
+									File.WriteAllText(htmlPath, html.TrimEnd() + Environment.NewLine, new UTF8Encoding(false));
+									continue;
+								}
 							}
-							else
-								txt = propertyObject.ToString();
-							if (!string.IsNullOrEmpty(txt))
+							else if (dataType == DataType.MultilineText)
 							{
-								nestedProperties.Add(propertyInfo.Name);
-								string txtPath = Path.Combine(folderPath, propertyInfo.Name + fileExtension);
-								File.WriteAllText(txtPath, txt.TrimEnd() + Environment.NewLine, new UTF8Encoding(false));
-								continue;
+								byte[] byteArray = propertyObject as byte[];
+								if (byteArray != null)
+								{
+									nestedProperties.Add(propertyInfo.Name);
+									txt = Encoding.ASCII.GetString(byteArray);
+								}
+								else
+									txt = propertyObject.ToString();
+								if (!string.IsNullOrEmpty(txt))
+								{
+									nestedProperties.Add(propertyInfo.Name);
+									string txtPath = Path.Combine(folderPath, propertyInfo.Name + fileExtension);
+									File.WriteAllText(txtPath, txt.TrimEnd() + Environment.NewLine, new UTF8Encoding(false));
+									continue;
+								}
 							}
 						}
 					}
@@ -311,6 +345,9 @@ namespace BuildingSmart.Serialization.Xml
 					writeObject(fileStream, obj, nestedProperties);
 				}
 			}
+			foreach (object o in forcedReferenceObjects)
+				_ObjectStore.UnMarkSerialized(o);
+
 			foreach (Tuple<string, object,bool> o in queued)
 			{
 				if(o.Item3)
